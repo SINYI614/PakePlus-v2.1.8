@@ -1,11 +1,1407 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        Hello World
-    </body>
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI生图提示词工具</title>  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0284c7',
+            secondary: '#0ea5e9',
+            light: '#f8fafc',
+            lighter: '#ffffff',
+            accent: '#38bdf8',
+            'blue-glow': '#0284c7',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'glow': '0 0 15px rgba(2, 132, 199, 0.3)',
+            'glow-lg': '0 0 25px rgba(2, 132, 199, 0.5)',
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 0 10px rgba(2, 132, 199, 0.3);
+      }
+      .border-glow {
+        box-shadow: 0 0 5px rgba(2, 132, 199, 0.3);
+      }
+      .gradient-border {
+        position: relative;
+        border-radius: 0.5rem;
+        z-index: 0;
+      }
+      .gradient-border::before {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        border-radius: 0.5rem;
+        background: linear-gradient(45deg, #0284c7, #0ea5e9);
+        z-index: -1;
+        box-shadow: 0 0 15px rgba(2, 132, 199, 0.3);
+      }
+      .content-auto {
+        content-visibility: auto;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .cinematic-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(2, 132, 199, 0.2);
+        transition: all 0.3s ease;
+      }
+      .cinematic-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(2, 132, 199, 0.5);
+        box-shadow: 0 0 20px rgba(2, 132, 199, 0.2);
+      }
+      .slider-thumb::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #0284c7;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+        transition: all 0.2s ease;
+      }
+      .slider-thumb::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(2, 132, 199, 0.7);
+      }
+      .slider-thumb::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #0284c7;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+        transition: all 0.2s ease;
+        border: none;
+      }
+      .slider-thumb::-moz-range-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(2, 132, 199, 0.7);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-light to-lighter min-h-screen text-gray-800 font-sans">
+  <!-- Header -->
+  <header class="py-4 px-6 border-b border-blue-200/30 bg-white/50 backdrop-blur-sm">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-glow">
+          <i class="fa fa-magic text-white text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800 text-shadow">恒创AI提示词工具</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+
+        <button id="help-button" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+          <i class="fa fa-question-circle text-blue-glow"></i>
+        </button>
+        <button id="save-preset" class="px-4 py-2 bg-gradient-to-r from-primary to-secondary rounded-lg hover:shadow-glow transition-all">
+          <i class="fa fa-save mr-2"></i>保存预设
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto py-8 px-4">
+    <!-- Project Info -->
+    <div class="mb-8 bg-white/80 rounded-xl p-4 border border-blue-200/30">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex-1 min-w-[250px]">
+          <label for="project-name" class="block text-sm font-medium text-gray-600 mb-1">项目名称</label>
+          <input type="text" id="project-name" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all" placeholder="输入项目名称">
+        </div>
+        <div class="flex-1 min-w-[250px]">
+          <label for="aspect-ratio" class="block text-sm font-medium text-gray-600 mb-1">宽高比</label>
+          <select id="aspect-ratio" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all">
+            <option value="16:9">16:9 (宽屏)</option>
+            <option value="9:16">9:16 (竖屏)</option>
+            <option value="4:3">4:3 (标准)</option>
+            <option value="21:9">21:9 (电影宽屏)</option>
+          </select>
+        </div>
+        <div class="flex-1 min-w-[250px]">
+          <label for="quality" class="block text-sm font-medium text-gray-600 mb-1">质量</label>
+          <select id="quality" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all">
+            <option value="1">低</option>
+            <option value="2" selected="">中</option>
+            <option value="3">高</option>
+            <option value="4">超高</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Scene Selection Column -->
+      <div class="cinematic-card rounded-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-primary/20 to-secondary/20 p-4 border-b border-blue-200/30">
+          <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-th-large text-blue-glow mr-3"></i>
+            场景选择
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-600 mb-3">选择镜头类型</label>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="wide">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-arrows-alt text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">全景</span>
+              </div>
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="medium">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-object-group text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">中景</span>
+              </div>
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="closeup">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-user text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">特写</span>
+              </div>
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="extreme-closeup">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-eye text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">极近特写</span>
+              </div>
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="establishing">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-map-marker text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">定场镜头</span>
+              </div>
+              <div class="scene-option cinematic-card p-4 rounded-lg cursor-pointer flex flex-col items-center" data-scene="aerial">
+                <div class="w-16 h-16 mb-3 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
+                  <i class="fa fa-plane text-blue-glow text-2xl"></i>
+                </div>
+                <span class="text-center text-sm text-gray-700">航拍镜头</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="scene-description" class="block text-sm font-medium text-gray-600 mb-2">图像描述</label>
+            <textarea id="scene-description" rows="4" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all" placeholder="描述图像内容、细节、构图和氛围..."></textarea>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-600 mb-2">情绪基调</label>
+            <div class="flex flex-wrap gap-2">
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="dramatic">戏剧化</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="melancholic">忧郁</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="suspenseful">悬疑</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="joyful">愉悦</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="mysterious">神秘</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="romantic">浪漫</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="nostalgic">怀旧</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="epic">史诗</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="tense">紧张</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="angry">愤怒</button>
+              <button class="emotion-btn px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-emotion="scared">害怕</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">构图类型</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="composition-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-composition="center">
+                <i class="fa fa-bullseye mr-2"></i>中心构图
+              </button>
+              <button class="composition-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-composition="rule-of-thirds">
+                <i class="fa fa-th-large mr-2"></i>三分法则
+              </button>
+              <button class="composition-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-composition="symmetrical">
+                <i class="fa fa-balance-scale mr-2"></i>对称构图
+              </button>
+              <button class="composition-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-composition="dynamic">
+                <i class="fa fa-arrows mr-2"></i>动态构图
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Camera Parameters Column -->
+      <div class="cinematic-card rounded-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-primary/20 to-secondary/20 p-4 border-b border-blue-200/30">
+          <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-sliders text-blue-glow mr-3"></i>
+            相机参数
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="space-y-6">
+            <!-- Focal Length -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="focal-length" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-arrows-h text-blue-glow mr-2"></i>
+                  焦距
+                </label>
+                <span id="focal-length-value" class="text-sm text-blue-glow">50mm</span>
+              </div>
+              <input type="range" id="focal-length" min="14" max="200" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>14mm (广角)</span>
+                <span>200mm (长焦)</span>
+              </div>
+            </div>
+
+            <!-- Aperture -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="aperture" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-circle-o text-blue-glow mr-2"></i>
+                  光圈
+                </label>
+                <span id="aperture-value" class="text-sm text-blue-glow">f/2.8</span>
+              </div>
+              <input type="range" id="aperture" min="1" max="16" step="0.1" value="2.8" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>f/1.0 (浅景深)</span>
+                <span>f/16 (深景深)</span>
+              </div>
+            </div>
+
+            <!-- Shutter Speed -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="shutter-speed" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-clock-o text-blue-glow mr-2"></i>
+                  快门速度
+                </label>
+                <span id="shutter-speed-value" class="text-sm text-blue-glow">1/50s</span>
+              </div>
+              <input type="range" id="shutter-speed" min="1" max="1000" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1s (慢)</span>
+                <span>1/1000s (快)</span>
+              </div>
+            </div>
+
+            <!-- ISO -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="iso" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-sun-o text-blue-glow mr-2"></i>
+                  ISO
+                </label>
+                <span id="iso-value" class="text-sm text-blue-glow">100</span>
+              </div>
+              <input type="range" id="iso" min="100" max="6400" step="100" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>100 (低)</span>
+                <span>6400 (高)</span>
+              </div>
+            </div>
+
+            <!-- White Balance -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="white-balance" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-adjust text-blue-glow mr-2"></i>
+                  白平衡
+                </label>
+                <span id="white-balance-value" class="text-sm text-blue-glow">5600K</span>
+              </div>
+              <input type="range" id="white-balance" min="1800" max="10000" step="100" value="5600" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1800K (暖色调)</span>
+                <span>10000K (冷色调)</span>
+              </div>
+            </div>
+
+            <!-- Depth of Field -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="depth-of-field" class="text-sm font-medium text-gray-600 flex items-center">
+                  <i class="fa fa-object-group text-blue-glow mr-2"></i>
+                  景深
+                </label>
+                <span id="depth-of-field-value" class="text-sm text-blue-glow">中等</span>
+              </div>
+              <input type="range" id="depth-of-field" min="0" max="10" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>浅</span>
+                <span>深</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8">
+            <h3 class="text-sm font-medium text-gray-600 mb-3">相机运动</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="static">
+                <i class="fa fa-circle-o mr-2"></i>静态
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="pan-left">
+                <i class="fa fa-arrow-left mr-2"></i>向左摇镜
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="pan-right">
+                <i class="fa fa-arrow-right mr-2"></i>向右摇镜
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="tilt-up">
+                <i class="fa fa-arrow-up mr-2"></i>向上仰视
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="tilt-down">
+                <i class="fa fa-arrow-down mr-2"></i>向下俯视
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="tracking">
+                <i class="fa fa-arrows-h mr-2"></i>跟踪运动
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="dolly-in">
+                <i class="fa fa-search-plus mr-2"></i>向前推
+              </button>
+              <button class="movement-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all flex items-center justify-center text-gray-700" data-movement="dolly-out">
+                <i class="fa fa-search-minus mr-2"></i>向后拉
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt Generation Column -->
+      <div class="cinematic-card rounded-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-primary/20 to-secondary/20 p-4 border-b border-blue-200/30">
+          <h2 class="text-xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-magic text-blue-glow mr-3"></i>
+            提示词生成
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="mb-6">
+            <label for="prompt-output" class="block text-sm font-medium text-gray-600 mb-2">生成的提示词</label>
+            <div id="prompt-output" class="min-h-[200px] w-full bg-white border border-blue-200 rounded-lg p-4 text-sm font-mono overflow-y-auto scrollbar-hide text-gray-800">
+              [镜头类型], [图像描述], [情绪基调], [生图参数], [构图类型], [视觉风格]
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="visual-style" class="block text-sm font-medium text-gray-600 mb-2">视觉风格参考</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="photorealistic">写实主义</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="digital-art">数字艺术</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="anime">动漫风格</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="watercolor">水彩画</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="oil-painting">油画风格</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="3d-render">电影感</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="pixel-art">像素艺术</button>
+              <button class="style-btn px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border border-blue-300 text-sm transition-all text-gray-700" data-style="cyberpunk">赛博朋克</button>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="additional-params" class="block text-sm font-medium text-gray-600 mb-2">额外参数</label>
+            <textarea id="additional-params" rows="3" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all text-gray-800" placeholder="添加任何额外的参数或说明..."></textarea>
+          </div>
+
+          <div class="flex flex-col space-y-4">
+            <button id="generate-prompt" class="w-full py-3 bg-gradient-to-r from-primary to-secondary rounded-lg hover:shadow-glow transition-all flex items-center justify-center text-lg font-medium text-white">
+              <i class="fa fa-wand-magic-sparkles mr-3"></i>生成提示词
+            </button>
+            <button id="copy-prompt" class="w-full py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-all flex items-center justify-center text-gray-700">
+              <i class="fa fa-copy mr-3"></i>复制到剪贴板
+            </button>
+            <button id="clear-all" class="w-full py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-all flex items-center justify-center text-gray-700">
+              <i class="fa fa-trash mr-3"></i>清空所有
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example Presets -->
+    <div class="mt-10">
+      <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+        <i class="fa fa-bookmark text-blue-glow mr-3"></i>
+        示例预设
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Preset 1 -->
+        <div class="cinematic-card p-5 rounded-xl cursor-pointer hover:border-blue-glow transition-all" data-preset="modern-architecture">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="font-bold text-lg text-gray-800">现代建筑</h3>
+            <span class="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-glow">建筑</span>
+          </div>
+          <p class="text-gray-600 text-sm mb-4">现代主义建筑风格，干净线条，几何形状，自然光线。</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">建筑</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">写实主义</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">对称构图</span>
+          </div>
+          <div class="text-xs text-gray-500">点击加载预设</div>
+        </div>
+
+        <!-- Preset 2 -->
+        <div class="cinematic-card p-5 rounded-xl cursor-pointer hover:border-blue-glow transition-all" data-preset="vintage-portrait">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="font-bold text-lg text-gray-800">复古人像</h3>
+            <span class="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-glow">人像</span>
+          </div>
+          <p class="text-gray-600 text-sm mb-4">复古风格人像摄影，温暖色调，胶片质感，经典构图。</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">人像</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">电影感</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">中心构图</span>
+          </div>
+          <div class="text-xs text-gray-500">点击加载预设</div>
+        </div>
+
+        <!-- Preset 3 -->
+        <div class="cinematic-card p-5 rounded-xl cursor-pointer hover:border-blue-glow transition-all" data-preset="minimal-still-life">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="font-bold text-lg text-gray-800">极简静物</h3>
+            <span class="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-glow">静物</span>
+          </div>
+          <p class="text-gray-600 text-sm mb-4">极简主义静物摄影，干净背景，精心构图，柔和光线。</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">静物</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">写实主义</span>
+            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">三分法则</span>
+          </div>
+          <div class="text-xs text-gray-500">点击加载预设</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved Presets -->
+    <div class="mt-10">
+      <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+        <i class="fa fa-save text-blue-glow mr-3"></i>
+        已保存的预设
+      </h2>
+      <div id="saved-presets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Saved presets will be rendered here -->
+      </div>
+    </div>
+  </main>
+
+
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="p-6 border-b border-blue-200/30">
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-bold text-gray-800">如何使用AI生图提示词工具</h2>
+          <button id="close-help" class="text-gray-400 hover:text-gray-800">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-blue-glow mb-2">1. 场景选择</h3>
+          <p class="text-gray-600">选择镜头类型（全景、中景、特写等）并详细描述您的场景。选择情绪基调来设定氛围。</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-blue-glow mb-2">2. 相机参数</h3>
+          <p class="text-gray-600">调整相机设置，如焦距、光圈、快门速度、ISO和白平衡，以达到所需效果。必要时选择相机运动选项。</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-blue-glow mb-2">3. 提示词生成</h3>
+          <p class="text-gray-600">点击"生成提示词"将所有选择组合成一个全面的AI生图提示词。您可以添加额外参数并将最终提示词复制到剪贴板。</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-blue-glow mb-2">4. 使用预设</h3>
+          <p class="text-gray-600">加载示例预设，快速开始使用不同的风格和配置。</p>
+        </div>
+        <div class="pt-4 border-t border-blue-200/30">
+          <h3 class="text-lg font-bold text-blue-glow mb-2">获得更好结果的提示</h3>
+          <ul class="list-disc list-inside text-gray-600 space-y-2">
+            <li>场景描述要具体</li>
+            <li>考虑不同相机参数如何影响效果</li>
+            <li>尝试不同的视觉风格</li>
+            <li>使用情绪基调指导参数选择</li>
+          </ul>
+        </div>
+      </div>
+      <div class="p-6 border-t border-blue-200/30 flex justify-end">
+        <button id="close-help-btn" class="px-6 py-2 bg-gradient-to-r from-primary to-secondary rounded-lg hover:shadow-glow transition-all text-white">
+          明白了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Preset Modal -->
+  <div id="save-preset-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl max-w-md w-full mx-4">
+      <div class="p-6 border-b border-blue-200/30">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-bold text-gray-800">保存预设</h2>
+          <button id="close-save-preset" class="text-gray-400 hover:text-gray-800">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="mb-4">
+          <label for="preset-name" class="block text-sm font-medium text-gray-600 mb-2">预设名称</label>
+          <input type="text" id="preset-name" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all text-gray-800" placeholder="输入预设名称">
+        </div>
+        <div class="mb-4">
+          <label for="preset-category" class="block text-sm font-medium text-gray-600 mb-2">分类</label>
+          <select id="preset-category" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all text-gray-800">
+            <option value="portrait">人像</option>
+            <option value="landscape">风景</option>
+            <option value="narrative">叙事</option>
+            <option value="abstract">抽象</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label for="preset-description" class="block text-sm font-medium text-gray-600 mb-2">描述</label>
+          <textarea id="preset-description" rows="3" class="w-full bg-white border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-glow focus:ring-1 focus:ring-blue-glow transition-all text-gray-800" placeholder="描述此预设..."></textarea>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button id="cancel-save-preset" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-all text-gray-700">
+            取消
+          </button>
+          <button id="confirm-save-preset" class="px-4 py-2 bg-gradient-to-r from-primary to-secondary rounded-lg hover:shadow-glow transition-all text-white">
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="fixed bottom-4 right-4 bg-white border border-blue-200/30 rounded-lg px-6 py-3 shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center">
+    <i id="notification-icon" class="fa fa-check-circle text-green-500 mr-3 text-xl"></i>
+    <span id="notification-text" class="text-gray-800">操作成功</span>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM Elements
+      const sceneOptions = document.querySelectorAll('.scene-option');
+      const emotionBtns = document.querySelectorAll('.emotion-btn');
+      const compositionBtns = document.querySelectorAll('.composition-btn');
+      const movementBtns = document.querySelectorAll('.movement-btn');
+      const styleBtns = document.querySelectorAll('.style-btn');
+      const presetCards = document.querySelectorAll('[data-preset]');
+      
+      const focalLengthSlider = document.getElementById('focal-length');
+      const focalLengthValue = document.getElementById('focal-length-value');
+      const apertureSlider = document.getElementById('aperture');
+      const apertureValue = document.getElementById('aperture-value');
+      const shutterSpeedSlider = document.getElementById('shutter-speed');
+      const shutterSpeedValue = document.getElementById('shutter-speed-value');
+      const isoSlider = document.getElementById('iso');
+      const isoValue = document.getElementById('iso-value');
+      const whiteBalanceSlider = document.getElementById('white-balance');
+      const whiteBalanceValue = document.getElementById('white-balance-value');
+      const depthOfFieldSlider = document.getElementById('depth-of-field');
+      const depthOfFieldValue = document.getElementById('depth-of-field-value');
+      
+      const sceneDescription = document.getElementById('scene-description');
+      const additionalParams = document.getElementById('additional-params');
+      const promptOutput = document.getElementById('prompt-output');
+      
+      const generatePromptBtn = document.getElementById('generate-prompt');
+      const copyPromptBtn = document.getElementById('copy-prompt');
+      const clearAllBtn = document.getElementById('clear-all');
+      
+      const helpButton = document.getElementById('help-button');
+      const helpModal = document.getElementById('help-modal');
+      const closeHelp = document.getElementById('close-help');
+      const closeHelpBtn = document.getElementById('close-help-btn');
+      
+      const savePresetBtn = document.getElementById('save-preset');
+      const savePresetModal = document.getElementById('save-preset-modal');
+      const closeSavePreset = document.getElementById('close-save-preset');
+      const cancelSavePreset = document.getElementById('cancel-save-preset');
+      const confirmSavePreset = document.getElementById('confirm-save-preset');
+      
+      const notification = document.getElementById('notification');
+      const notificationIcon = document.getElementById('notification-icon');
+      const notificationText = document.getElementById('notification-text');
+      
+
+      
+      // State
+      let selectedScene = null;
+      let selectedEmotion = null;
+      let selectedComposition = 'center';
+      let selectedMovement = 'static';
+      let selectedStyle = 'photorealistic';
+      
+      // Event Listeners
+      sceneOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          sceneOptions.forEach(opt => opt.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+          this.classList.add('border-blue-glow', 'bg-blue-100');
+          selectedScene = this.dataset.scene;
+          updatePrompt();
+        });
+      });
+      
+      emotionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          emotionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+          this.classList.add('border-blue-glow', 'bg-blue-200');
+          selectedEmotion = this.dataset.emotion;
+          updatePrompt();
+        });
+      });
+      
+      compositionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          compositionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+          this.classList.add('border-blue-glow', 'bg-blue-200');
+          selectedComposition = this.dataset.composition;
+          updatePrompt();
+        });
+      });
+      
+      movementBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          movementBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+          this.classList.add('border-blue-glow', 'bg-blue-200');
+          selectedMovement = this.dataset.movement;
+          updatePrompt();
+        });
+      });
+      
+      styleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          styleBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+          this.classList.add('border-blue-glow', 'bg-blue-200');
+          selectedStyle = this.dataset.style;
+          updatePrompt();
+        });
+      });
+      
+      // Slider Updates
+      focalLengthSlider.addEventListener('input', function() {
+        focalLengthValue.textContent = `${this.value}mm`;
+        updatePrompt();
+      });
+      
+      apertureSlider.addEventListener('input', function() {
+        apertureValue.textContent = `f/${this.value}`;
+        updatePrompt();
+      });
+      
+      shutterSpeedSlider.addEventListener('input', function() {
+        shutterSpeedValue.textContent = `1/${this.value}s`;
+        updatePrompt();
+      });
+      
+      isoSlider.addEventListener('input', function() {
+        isoValue.textContent = this.value;
+        updatePrompt();
+      });
+      
+      whiteBalanceSlider.addEventListener('input', function() {
+        whiteBalanceValue.textContent = `${this.value}K`;
+        
+        // Update color temperature display
+        const temp = parseInt(this.value);
+        if (temp <= 3000) {
+          whiteBalanceValue.classList.remove('text-blue-400', 'text-yellow-400');
+          whiteBalanceValue.classList.add('text-red-400');
+        } else if (temp >= 7000) {
+          whiteBalanceValue.classList.remove('text-red-400', 'text-yellow-400');
+          whiteBalanceValue.classList.add('text-blue-400');
+        } else {
+          whiteBalanceValue.classList.remove('text-red-400', 'text-blue-400');
+          whiteBalanceValue.classList.add('text-yellow-400');
+        }
+        
+        updatePrompt();
+      });
+      
+      depthOfFieldSlider.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        let dofText = '中等';
+        
+        if (value <= 2) dofText = '浅';
+        else if (value >= 8) dofText = '深';
+        
+        depthOfFieldValue.textContent = dofText;
+        updatePrompt();
+      });
+      
+      // Textarea Updates
+      sceneDescription.addEventListener('input', updatePrompt);
+      additionalParams.addEventListener('input', updatePrompt);
+      
+      // Button Actions
+      generatePromptBtn.addEventListener('click', function() {
+        updatePrompt();
+        showNotification('提示词生成成功', 'check-circle', 'green-500');
+      });
+      
+      copyPromptBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(promptOutput.textContent)
+          .then(() => {
+            showNotification('提示词已复制到剪贴板', 'check-circle', 'green-500');
+          })
+          .catch(err => {
+            showNotification('复制提示词失败', 'exclamation-circle', 'red-500');
+            console.error('复制文本错误: ', err);
+          });
+      });
+      
+      clearAllBtn.addEventListener('click', function() {
+        // Reset scene selection
+        sceneOptions.forEach(opt => opt.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+        selectedScene = null;
+        
+        // Reset emotion selection
+        emotionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50'));
+        selectedEmotion = null;
+        
+        // Reset composition selection
+        compositionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50', 'bg-blue-200'));
+        compositionBtns[0].classList.add('border-blue-glow', 'bg-blue-200');
+        selectedComposition = 'center';
+        
+        // Reset movement selection
+        movementBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50', 'bg-blue-200'));
+        movementBtns[0].classList.add('border-blue-glow', 'bg-blue-200');
+        selectedMovement = 'static';
+        
+        // Reset style selection
+        styleBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-900/50', 'bg-blue-200'));
+        styleBtns[0].classList.add('border-blue-glow', 'bg-blue-200');
+        selectedStyle = 'photorealistic';
+        
+        // Reset sliders
+        focalLengthSlider.value = 50;
+        focalLengthValue.textContent = '50mm';
+        
+        apertureSlider.value = 2.8;
+        apertureValue.textContent = 'f/2.8';
+        
+        shutterSpeedSlider.value = 50;
+        shutterSpeedValue.textContent = '1/50s';
+        
+        isoSlider.value = 100;
+        isoValue.textContent = '100';
+        
+        whiteBalanceSlider.value = 5600;
+        whiteBalanceValue.textContent = '5600K';
+        whiteBalanceValue.classList.remove('text-red-400', 'text-blue-400');
+        whiteBalanceValue.classList.add('text-yellow-400');
+        
+        depthOfFieldSlider.value = 5;
+        depthOfFieldValue.textContent = '中等';
+        
+        // Reset textareas
+        sceneDescription.value = '';
+        additionalParams.value = '';
+        
+        // Reset prompt output
+        promptOutput.textContent = '[镜头类型], [图像描述], [情绪基调], [相机参数], [构图类型], [相机运动], [视觉风格]';
+        
+        showNotification('所有字段已清空', 'info-circle', 'blue-500');
+      });
+      
+      // Help Modal
+      helpButton.addEventListener('click', function() {
+        helpModal.classList.remove('hidden');
+      });
+      
+      closeHelp.addEventListener('click', function() {
+        helpModal.classList.add('hidden');
+      });
+      
+      closeHelpBtn.addEventListener('click', function() {
+        helpModal.classList.add('hidden');
+      });
+      
+      // Save Preset Modal
+      savePresetBtn.addEventListener('click', function() {
+        savePresetModal.classList.remove('hidden');
+      });
+      
+      closeSavePreset.addEventListener('click', function() {
+        savePresetModal.classList.add('hidden');
+      });
+      
+      cancelSavePreset.addEventListener('click', function() {
+        savePresetModal.classList.add('hidden');
+      });
+      
+      confirmSavePreset.addEventListener('click', function() {
+        const presetName = document.getElementById('preset-name').value;
+        if (!presetName) {
+          showNotification('请输入预设名称', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // Get current settings
+        const presetData = {
+          id: Date.now().toString(),
+          name: presetName,
+          category: document.getElementById('preset-category').value,
+          description: document.getElementById('preset-description').value,
+          scene: selectedScene,
+          emotion: selectedEmotion,
+          composition: selectedComposition,
+          movement: selectedMovement,
+          style: selectedStyle,
+          sceneDescription: sceneDescription.value,
+          additionalParams: additionalParams.value,
+          cameraParams: {
+            focalLength: focalLengthSlider.value,
+            aperture: apertureSlider.value,
+            shutterSpeed: shutterSpeedSlider.value,
+            iso: isoSlider.value,
+            whiteBalance: whiteBalanceSlider.value,
+            depthOfField: depthOfFieldSlider.value
+          }
+        };
+        
+        // Get existing presets from localStorage
+        let presets = JSON.parse(localStorage.getItem('ai-prompt-presets') || '[]');
+        
+        // Check if preset limit is reached
+        if (presets.length >= 9) {
+          showNotification('预设数量已达到上限（最多9个）', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // Add new preset
+        presets.push(presetData);
+        
+        // Save back to localStorage
+        localStorage.setItem('ai-prompt-presets', JSON.stringify(presets));
+        
+        showNotification(`预设 "${presetName}" 保存成功`, 'check-circle', 'green-500');
+        savePresetModal.classList.add('hidden');
+        
+        // Reset form
+        document.getElementById('preset-name').value = '';
+        document.getElementById('preset-description').value = '';
+        
+        // Update saved presets display
+        renderSavedPresets();
+      });
+      
+      // Preset Loading
+      presetCards.forEach(card => {
+        card.addEventListener('click', function() {
+          const preset = this.dataset.preset;
+          loadPreset(preset);
+        });
+      });
+      
+
+      
+      // Functions
+      function updatePrompt() {
+        // Get scene type text
+        let sceneTypeText = selectedScene ? formatSceneType(selectedScene) : '[镜头类型]';
+        
+        // Get scene description
+        let sceneDescText = sceneDescription.value.trim() || '[图像描述]';
+        
+        // Get emotional tone
+        let emotionText = selectedEmotion ? formatEmotion(selectedEmotion) : '[情绪基调]';
+        
+        // Get camera parameters
+        const focalLength = focalLengthSlider.value;
+        const aperture = apertureSlider.value;
+        const shutterSpeed = shutterSpeedSlider.value;
+        const iso = isoSlider.value;
+        const whiteBalance = whiteBalanceSlider.value;
+        const depthOfField = depthOfFieldSlider.value;
+        
+        let dofText = '中等';
+        if (depthOfField <= 2) dofText = '浅';
+        else if (depthOfField >= 8) dofText = '深';
+        
+        let cameraParamsText = `相机参数: ${focalLength}mm, f/${aperture}, 1/${shutterSpeed}s, ISO ${iso}, ${whiteBalance}K 白平衡, ${dofText}景深`;
+        
+        // Get composition type
+        let compositionText = formatComposition(selectedComposition);
+        
+        // Get camera movement
+        let movementText = formatMovement(selectedMovement);
+        
+        // Get visual style
+        let styleText = formatStyle(selectedStyle);
+        
+        // Get additional parameters
+        let additionalParamsText = additionalParams.value.trim() ? `, ${additionalParams.value.trim()}` : '';
+        
+        // Combine all parts
+        let prompt = `${sceneTypeText}, ${sceneDescText}, ${emotionText}, ${cameraParamsText}, ${compositionText}, ${movementText}, ${styleText}${additionalParamsText}`;
+        
+        // Update prompt output
+        promptOutput.textContent = prompt;
+      }
+      
+      function formatSceneType(sceneType) {
+        const sceneTypes = {
+          'wide': '全景镜头',
+          'medium': '中景镜头',
+          'closeup': '特写镜头',
+          'extreme-closeup': '极近特写镜头',
+          'establishing': '定场镜头',
+          'aerial': '航拍镜头'
+        };
+        
+        return sceneTypes[sceneType] || sceneType;
+      }
+      
+      function formatEmotion(emotion) {
+        const emotions = {
+          'dramatic': '戏剧化情绪基调',
+          'melancholic': '忧郁情绪基调',
+          'suspenseful': '悬疑情绪基调',
+          'joyful': '愉悦情绪基调',
+          'mysterious': '神秘情绪基调',
+          'romantic': '浪漫情绪基调',
+          'nostalgic': '怀旧情绪基调',
+          'epic': '史诗情绪基调',
+          'tense': '紧张情绪基调',
+          'angry': '愤怒情绪基调',
+          'scared': '害怕情绪基调'
+        };
+        
+        return emotions[emotion] || emotion;
+      }
+      
+      function formatComposition(composition) {
+        const compositions = {
+          'center': '中心构图',
+          'rule-of-thirds': '三分法则构图',
+          'symmetrical': '对称构图',
+          'dynamic': '动态构图'
+        };
+        
+        return compositions[composition] || composition;
+      }
+      
+      function formatMovement(movement) {
+        const movements = {
+          'static': '静态相机',
+          'pan-left': '相机向左摇镜',
+          'pan-right': '相机向右摇镜',
+          'tilt-up': '相机向上仰视',
+          'tilt-down': '相机向下俯视',
+          'tracking': '相机跟踪运动',
+          'dolly-in': '相机向前推',
+          'dolly-out': '相机向后拉'
+        };
+        
+        return movements[movement] || movement;
+      }
+      
+      function formatStyle(style) {
+        const styles = {
+          'photorealistic': '写实主义视觉风格',
+          'digital-art': '数字艺术视觉风格',
+          'anime': '动漫风格',
+          'watercolor': '水彩画视觉风格',
+          'oil-painting': '油画风格',
+          '3d-render': '电影感视觉风格',
+          'pixel-art': '像素艺术视觉风格',
+          'cyberpunk': '赛博朋克视觉风格'
+        };
+        
+        return styles[style] || style;
+      }
+      
+      function showNotification(message, iconName, iconColor) {
+        notificationText.textContent = message;
+        
+        // Update icon
+        notificationIcon.className = '';
+        notificationIcon.classList.add('fa', `fa-${iconName}`, iconColor, 'mr-3', 'text-xl');
+        
+        // Show notification
+        notification.classList.remove('translate-y-20', 'opacity-0');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+          notification.classList.add('translate-y-20', 'opacity-0');
+        }, 3000);
+      }
+      
+      // Render saved presets
+      function renderSavedPresets() {
+        const container = document.getElementById('saved-presets-container');
+        container.innerHTML = '';
+        
+        // Get presets from localStorage
+        const presets = JSON.parse(localStorage.getItem('ai-prompt-presets') || '[]');
+        
+        if (presets.length === 0) {
+          container.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">暂无保存的预设</div>';
+          return;
+        }
+        
+        // Render each preset
+        presets.forEach(preset => {
+          const presetCard = document.createElement('div');
+          presetCard.className = 'cinematic-card p-5 rounded-xl cursor-pointer hover:border-blue-glow transition-all';
+          presetCard.dataset.presetId = preset.id;
+          
+          // Get category text
+          const categoryText = getCategoryText(preset.category);
+          
+          // Get style text
+          const styleText = formatStyle(preset.style);
+          
+          // Get composition text
+          const compositionText = formatComposition(preset.composition);
+          
+          presetCard.innerHTML = `
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="font-bold text-lg text-gray-800">${preset.name}</h3>
+              <span class="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-glow">${categoryText}</span>
+            </div>
+            ${preset.description ? `<p class="text-gray-600 text-sm mb-4">${preset.description}</p>` : ''}
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">${styleText.split(' ')[0]}</span>
+              <span class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">${compositionText}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <div class="text-xs text-gray-500">点击加载预设</div>
+              <button class="delete-preset-btn text-red-500 hover:text-red-700 transition-colors" data-preset-id="${preset.id}">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          `;
+          
+          container.appendChild(presetCard);
+        });
+        
+        // Add event listeners for loading presets
+        document.querySelectorAll('[data-preset-id]').forEach(card => {
+          card.addEventListener('click', function(e) {
+            if (!e.target.closest('.delete-preset-btn')) {
+              const presetId = this.dataset.presetId;
+              loadSavedPreset(presetId);
+            }
+          });
+        });
+        
+        // Add event listeners for deleting presets
+        document.querySelectorAll('.delete-preset-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const presetId = this.dataset.presetId;
+            deletePreset(presetId);
+          });
+        });
+      }
+      
+      // Get category text
+      function getCategoryText(category) {
+        const categories = {
+          'portrait': '人像',
+          'landscape': '风景',
+          'narrative': '叙事',
+          'abstract': '抽象',
+          'other': '其他'
+        };
+        return categories[category] || category;
+      }
+      
+      // Load saved preset
+      function loadSavedPreset(presetId) {
+        const presets = JSON.parse(localStorage.getItem('ai-prompt-presets') || '[]');
+        const preset = presets.find(p => p.id === presetId);
+        
+        if (!preset) {
+          showNotification('预设不存在', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // Clear current selections
+        sceneOptions.forEach(opt => opt.classList.remove('border-blue-glow', 'bg-blue-100'));
+        emotionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        compositionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        styleBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        movementBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        
+        // Load preset settings
+        if (preset.scene) {
+          const sceneOption = document.querySelector(`[data-scene="${preset.scene}"]`);
+          if (sceneOption) {
+            sceneOption.classList.add('border-blue-glow', 'bg-blue-100');
+          }
+          selectedScene = preset.scene;
+        }
+        
+        if (preset.emotion) {
+          const emotionBtn = document.querySelector(`[data-emotion="${preset.emotion}"]`);
+          if (emotionBtn) {
+            emotionBtn.classList.add('border-blue-glow', 'bg-blue-200');
+          }
+          selectedEmotion = preset.emotion;
+        }
+        
+        if (preset.composition) {
+          const compositionBtn = document.querySelector(`[data-composition="${preset.composition}"]`);
+          if (compositionBtn) {
+            compositionBtn.classList.add('border-blue-glow', 'bg-blue-200');
+          }
+          selectedComposition = preset.composition;
+        }
+        
+        if (preset.movement) {
+          const movementBtn = document.querySelector(`[data-movement="${preset.movement}"]`);
+          if (movementBtn) {
+            movementBtn.classList.add('border-blue-glow', 'bg-blue-200');
+          }
+          selectedMovement = preset.movement;
+        }
+        
+        if (preset.style) {
+          const styleBtn = document.querySelector(`[data-style="${preset.style}"]`);
+          if (styleBtn) {
+            styleBtn.classList.add('border-blue-glow', 'bg-blue-200');
+          }
+          selectedStyle = preset.style;
+        }
+        
+        // Set textareas
+        sceneDescription.value = preset.sceneDescription || '';
+        additionalParams.value = preset.additionalParams || '';
+        
+        // Set camera parameters
+        if (preset.cameraParams) {
+          focalLengthSlider.value = preset.cameraParams.focalLength || 50;
+          focalLengthValue.textContent = `${focalLengthSlider.value}mm`;
+          
+          apertureSlider.value = preset.cameraParams.aperture || 2.8;
+          apertureValue.textContent = `f/${apertureSlider.value}`;
+          
+          shutterSpeedSlider.value = preset.cameraParams.shutterSpeed || 50;
+          shutterSpeedValue.textContent = `1/${shutterSpeedSlider.value}s`;
+          
+          isoSlider.value = preset.cameraParams.iso || 100;
+          isoValue.textContent = isoSlider.value;
+          
+          whiteBalanceSlider.value = preset.cameraParams.whiteBalance || 5600;
+          whiteBalanceValue.textContent = `${whiteBalanceSlider.value}K`;
+          
+          depthOfFieldSlider.value = preset.cameraParams.depthOfField || 5;
+          const dofValue = parseInt(depthOfFieldSlider.value);
+          let dofText = '中等';
+          if (dofValue <= 2) dofText = '浅';
+          else if (dofValue >= 8) dofText = '深';
+          depthOfFieldValue.textContent = dofText;
+        }
+        
+        // Update prompt
+        updatePrompt();
+        showNotification(`预设 "${preset.name}" 加载成功`, 'check-circle', 'green-500');
+      }
+      
+      // Delete preset
+      function deletePreset(presetId) {
+        if (confirm('确定要删除此预设吗？')) {
+          let presets = JSON.parse(localStorage.getItem('ai-prompt-presets') || '[]');
+          presets = presets.filter(p => p.id !== presetId);
+          localStorage.setItem('ai-prompt-presets', JSON.stringify(presets));
+          renderSavedPresets();
+          showNotification('预设删除成功', 'check-circle', 'green-500');
+        }
+      }
+      
+      function loadPreset(preset) {
+        // Clear current selections
+        sceneOptions.forEach(opt => opt.classList.remove('border-blue-glow', 'bg-blue-100'));
+        emotionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        compositionBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        styleBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        movementBtns.forEach(b => b.classList.remove('border-blue-glow', 'bg-blue-200'));
+        
+        // Load preset settings
+        if (preset === 'modern-architecture') {
+          // Select wide scene
+          document.querySelector('[data-scene="wide"]').classList.add('border-blue-glow', 'bg-blue-100');
+          selectedScene = 'wide';
+          
+          // Select dramatic emotion
+          document.querySelector('[data-emotion="dramatic"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedEmotion = 'dramatic';
+          
+          // Select symmetrical composition
+          document.querySelector('[data-composition="symmetrical"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedComposition = 'symmetrical';
+          
+          // Select photorealistic style
+          document.querySelector('[data-style="photorealistic"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedStyle = 'photorealistic';
+          
+          // Set static movement
+          document.querySelector('[data-movement="static"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedMovement = 'static';
+          
+          // Set sliders
+          focalLengthSlider.value = 35;
+          focalLengthValue.textContent = '35mm';
+          
+          apertureSlider.value = 8;
+          apertureValue.textContent = 'f/8';
+          
+          shutterSpeedSlider.value = 125;
+          shutterSpeedValue.textContent = '1/125s';
+          
+          isoSlider.value = 100;
+          isoValue.textContent = '100';
+          
+          whiteBalanceSlider.value = 5600;
+          whiteBalanceValue.textContent = '5600K';
+          
+          depthOfFieldSlider.value = 7;
+          depthOfFieldValue.textContent = '深';
+          
+          // Set scene description
+          sceneDescription.value = '现代主义建筑，干净线条，几何形状，大面积玻璃，自然光线，蓝天白云背景';
+          
+        } else if (preset === 'vintage-portrait') {
+          // Select closeup scene
+          document.querySelector('[data-scene="closeup"]').classList.add('border-blue-glow', 'bg-blue-100');
+          selectedScene = 'closeup';
+          
+          // Select nostalgic emotion
+          document.querySelector('[data-emotion="nostalgic"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedEmotion = 'nostalgic';
+          
+          // Select center composition
+          document.querySelector('[data-composition="center"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedComposition = 'center';
+          
+          // Select 3d-render (电影感) style
+          document.querySelector('[data-style="3d-render"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedStyle = '3d-render';
+          
+          // Set static movement
+          document.querySelector('[data-movement="static"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedMovement = 'static';
+          
+          // Set sliders
+          focalLengthSlider.value = 85;
+          focalLengthValue.textContent = '85mm';
+          
+          apertureSlider.value = 2.8;
+          apertureValue.textContent = 'f/2.8';
+          
+          shutterSpeedSlider.value = 125;
+          shutterSpeedValue.textContent = '1/125s';
+          
+          isoSlider.value = 200;
+          isoValue.textContent = '200';
+          
+          whiteBalanceSlider.value = 3200;
+          whiteBalanceValue.textContent = '3200K';
+          
+          depthOfFieldSlider.value = 2;
+          depthOfFieldValue.textContent = '浅';
+          
+          // Set scene description
+          sceneDescription.value = '复古风格人像，温暖色调，胶片质感，柔和光线，经典构图，中性背景';
+          
+        } else if (preset === 'minimal-still-life') {
+          // Select medium scene
+          document.querySelector('[data-scene="medium"]').classList.add('border-blue-glow', 'bg-blue-100');
+          selectedScene = 'medium';
+          
+          // Select mysterious emotion
+          document.querySelector('[data-emotion="mysterious"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedEmotion = 'mysterious';
+          
+          // Select rule-of-thirds composition
+          document.querySelector('[data-composition="rule-of-thirds"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedComposition = 'rule-of-thirds';
+          
+          // Select photorealistic style
+          document.querySelector('[data-style="photorealistic"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedStyle = 'photorealistic';
+          
+          // Set static movement
+          document.querySelector('[data-movement="static"]').classList.add('border-blue-glow', 'bg-blue-200');
+          selectedMovement = 'static';
+          
+          // Set sliders
+          focalLengthSlider.value = 50;
+          focalLengthValue.textContent = '50mm';
+          
+          apertureSlider.value = 4;
+          apertureValue.textContent = 'f/4';
+          
+          shutterSpeedSlider.value = 125;
+          shutterSpeedValue.textContent = '1/125s';
+          
+          isoSlider.value = 100;
+          isoValue.textContent = '100';
+          
+          whiteBalanceSlider.value = 5600;
+          whiteBalanceValue.textContent = '5600K';
+          
+          depthOfFieldSlider.value = 4;
+          depthOfFieldValue.textContent = '中等';
+          
+          // Set scene description
+          sceneDescription.value = '极简主义静物，几何形状，干净背景，柔和光线，精心构图，有限色彩';
+        }
+        
+        // Update prompt
+        updatePrompt();
+        showNotification('预设加载成功', 'check-circle', 'green-500');
+      }
+      
+      // Initialize
+      // Select center composition by default
+      document.querySelector('[data-composition="center"]').classList.add('border-blue-glow', 'bg-blue-200');
+      
+      // Select static movement by default
+      document.querySelector('[data-movement="static"]').classList.add('border-blue-glow', 'bg-blue-200');
+      
+      // Select photorealistic style by default
+      document.querySelector('[data-style="photorealistic"]').classList.add('border-blue-glow', 'bg-blue-200');
+      
+      // Render saved presets on page load
+      renderSavedPresets();
+    });
+  </script>
+</body>
 </html>
