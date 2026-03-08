@@ -1,11 +1,2278 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        Hello World
-    </body>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>恒创拼豆工具</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#78a048',
+            secondary: '#4a6741',
+            light: '#f0f0f0',
+            lighter: '#ffffff',
+            accent: '#f9a826',
+            'pixel-border': '#333333',
+            'pixel-bg': '#f7f3e3',
+            'pixel-panel': '#f0e6d2',
+          },
+          fontFamily: {
+            sans: ['"Press Start 2P"', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'pixel': '4px 4px 0 rgba(0, 0, 0, 0.2)',
+            'pixel-inset': 'inset 2px 2px 0 rgba(255, 255, 255, 0.5), inset -2px -2px 0 rgba(0, 0, 0, 0.2)',
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts - Press Start 2P (Pixel Font) -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .pixel-border {
+        border: 4px solid theme('colors.pixel-border');
+        box-shadow: theme('boxShadow.pixel');
+        image-rendering: pixelated;
+      }
+      .pixel-button {
+        border: 4px solid theme('colors.pixel-border');
+        box-shadow: theme('boxShadow.pixel');
+        transition: all 0.1s ease;
+        image-rendering: pixelated;
+      }
+      .pixel-button:hover {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+      }
+      .pixel-button:active {
+        transform: translate(4px, 4px);
+        box-shadow: none;
+      }
+      .pixel-panel {
+        background-color: theme('colors.pixel-panel');
+        border: 4px solid theme('colors.pixel-border');
+        box-shadow: theme('boxShadow.pixel');
+        image-rendering: pixelated;
+      }
+      .pixel-input {
+        border: 4px solid theme('colors.pixel-border');
+        box-shadow: theme('boxShadow.pixel-inset');
+        image-rendering: pixelated;
+      }
+      .bead-preview {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-right: 8px;
+        border: 2px solid theme('colors.pixel-border');
+        image-rendering: pixelated;
+      }
+      .bead-grid {
+        display: grid;
+        gap: 1px;
+        image-rendering: pixelated;
+      }
+      .bead-cell {
+        width: 12px;
+        height: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        image-rendering: pixelated;
+      }
+
+      .pixel-scrollbar::-webkit-scrollbar {
+        width: 12px;
+      }
+      .pixel-scrollbar::-webkit-scrollbar-track {
+        background: theme('colors.pixel-panel');
+        border-left: 4px solid theme('colors.pixel-border');
+      }
+      .pixel-scrollbar::-webkit-scrollbar-thumb {
+        background: theme('colors.primary');
+        border: 2px solid theme('colors.pixel-border');
+      }
+    }
+  </style>
+</head>
+<body class="bg-pixel-bg min-h-screen text-gray-800 font-sans">
+  <!-- Header -->
+  <header class="py-6 px-6 border-b-4 border-pixel-border bg-primary">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 bg-accent border-4 border-pixel-border flex items-center justify-center pixel-border">
+          <i class="fa fa-cubes text-pixel-border text-xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-pixel-bg">恒创拼豆工具</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="help-button" class="p-3 bg-pixel-panel border-4 border-pixel-border pixel-button">
+          <i class="fa fa-question-circle text-pixel-border"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto py-8 px-4">
+    <!-- Navigation Tabs -->
+    <div class="mb-8 flex space-x-4">
+      <button class="tab-btn px-6 py-4 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm" data-tab="bead-generator">
+        <i class="fa fa-image mr-2"></i>拼豆图纸生成
+      </button>
+      <button class="tab-btn px-6 py-4 bg-pixel-panel text-pixel-border border-4 border-pixel-border pixel-button text-sm" data-tab="inventory-management">
+        <i class="fa fa-cubes mr-2"></i>库存管理
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="bead-generator">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Image Upload and Drawing Section -->
+        <div class="pixel-panel rounded-none">
+          <div class="bg-secondary p-4 border-b-4 border-pixel-border">
+            <h3 class="text-lg font-bold text-pixel-bg flex items-center">
+              <i class="fa fa-upload mr-3"></i>上传图片 / 画图
+            </h3>
+          </div>
+          <div class="p-6">
+            <!-- Upload or Draw Tabs -->
+            <div class="mb-6 flex space-x-4">
+              <button id="upload-tab" class="flex-1 py-3 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm">
+                <i class="fa fa-cloud-upload mr-2"></i>上传图片
+              </button>
+              <button id="draw-tab" class="flex-1 py-3 bg-pixel-panel text-pixel-border border-4 border-pixel-border pixel-button text-sm">
+                <i class="fa fa-pencil mr-2"></i>画图
+              </button>
+            </div>
+            
+            <!-- Upload Section -->
+            <div id="upload-section">
+              <div class="mb-6">
+                <div class="border-4 border-dashed border-pixel-border bg-pixel-bg p-8 text-center pixel-border">
+                  <input type="file" id="image-upload" accept="image/*" class="hidden">
+                  <label for="image-upload" class="cursor-pointer">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-accent border-4 border-pixel-border flex items-center justify-center">
+                      <i class="fa fa-cloud-upload text-pixel-border text-3xl"></i>
+                    </div>
+                    <p class="text-pixel-border mb-2 text-sm">点击或拖拽上传图片</p>
+                    <p class="text-pixel-border text-xs">支持 JPG、PNG、GIF 格式</p>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-pixel-border mb-4">图片预览</label>
+                <div id="image-preview" class="border-4 border-pixel-border bg-pixel-bg min-h-[200px] flex items-center justify-center pixel-border">
+                  <p class="text-pixel-border text-sm">上传图片后将显示预览</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Drawing Section -->
+            <div id="draw-section" class="hidden">
+              <!-- Canvas Size -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-pixel-border mb-2">画布大小</label>
+                <div class="flex items-center space-x-4">
+                  <input type="range" id="draw-canvas-size" min="5" max="30" value="15" class="flex-1 h-6 bg-pixel-bg border-4 border-pixel-border pixel-input cursor-pointer">
+                  <div class="w-24 text-center bg-pixel-bg border-4 border-pixel-border pixel-border">
+                    <span id="draw-canvas-size-value" class="text-sm">15x15</span>
+                  </div>
+                </div>
+                <div class="flex justify-between text-xs text-pixel-border mt-1">
+                  <span>5x5</span>
+                  <span>30x30</span>
+                </div>
+              </div>
+              
+              <!-- Drawing Tools -->
+              <div class="mb-4 flex flex-wrap gap-2">
+                <button id="draw-brush" class="px-4 py-2 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm">
+                  <i class="fa fa-pencil mr-2"></i>画笔
+                </button>
+                <button id="draw-eraser" class="px-4 py-2 bg-pixel-panel text-pixel-border border-4 border-pixel-border pixel-button text-sm">
+                  <i class="fa fa-eraser mr-2"></i>橡皮擦
+                </button>
+                <button id="draw-undo" class="px-4 py-2 bg-pixel-panel text-pixel-border border-4 border-pixel-border pixel-button text-sm">
+                  <i class="fa fa-undo mr-2"></i>撤销
+                </button>
+                <button id="draw-clear" class="px-4 py-2 bg-pixel-panel text-pixel-border border-4 border-pixel-border pixel-button text-sm">
+                  <i class="fa fa-trash mr-2"></i>清空
+                </button>
+              </div>
+              
+              <!-- Brush Size -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-pixel-border mb-2">画笔大小</label>
+                <div class="flex items-center space-x-4">
+                  <input type="range" id="brush-size" min="1" max="3" value="1" class="flex-1 h-6 bg-pixel-bg border-4 border-pixel-border pixel-input cursor-pointer">
+                  <div class="w-24 text-center bg-pixel-bg border-4 border-pixel-border pixel-border">
+                    <span id="brush-size-value" class="text-sm">1x1</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Color Palette -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-pixel-border mb-2">颜色选择</label>
+                <!-- Color Search and Add -->
+                <div class="flex space-x-2 mb-3">
+                  <div class="flex space-x-2">
+                    <input type="color" id="color-picker" class="w-12 h-12 border-4 border-pixel-border pixel-input cursor-pointer">
+                    <button id="add-color" class="px-4 py-2 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm">
+                      <i class="fa fa-plus mr-1"></i>添加
+                    </button>
+                  </div>
+                  <input type="text" id="color-search" placeholder="搜索颜色..." class="w-40 bg-pixel-bg border-4 border-pixel-border pixel-input px-3 py-2 text-sm">
+                </div>
+                <!-- Search Results -->
+                <div id="color-search-results" class="mb-3 hidden">
+                  <div class="text-sm font-medium text-pixel-border mb-2">搜索结果</div>
+                  <div id="search-results-container" class="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto pixel-scrollbar">
+                    <!-- Search results will be generated by JavaScript -->
+                  </div>
+                </div>
+                <div id="color-palette" class="grid grid-cols-8 gap-1">
+                  <!-- Colors will be generated by JavaScript -->
+                </div>
+              </div>
+              
+              <!-- Drawing Canvas -->
+              <div class="mb-4">
+                <div id="drawing-canvas-container" class="border-4 border-pixel-border bg-pixel-bg pixel-border">
+                  <!-- Canvas will be generated by JavaScript -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Grid Size (common for both upload and draw) -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-pixel-border mb-4">网格大小</label>
+              <div class="flex items-center space-x-4">
+                <input type="range" id="grid-size" min="10" max="100" value="30" class="flex-1 h-6 bg-pixel-bg border-4 border-pixel-border pixel-input cursor-pointer">
+                <div class="w-24 text-center bg-pixel-bg border-4 border-pixel-border pixel-border">
+                  <span id="grid-size-value" class="text-sm">30x30</span>
+                </div>
+              </div>
+              <div class="flex justify-between text-xs text-pixel-border mt-2">
+                <span>10x10</span>
+                <span>100x100</span>
+              </div>
+            </div>
+            
+            <button id="generate-bead-pattern" class="w-full py-4 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+              <i class="fa fa-magic mr-3"></i>生成拼豆图纸
+            </button>
+          </div>
+        </div>
+
+        <!-- Bead Pattern Result -->
+        <div class="pixel-panel rounded-none">
+          <div class="bg-secondary p-4 border-b-4 border-pixel-border">
+            <h3 class="text-lg font-bold text-pixel-bg flex items-center">
+              <i class="fa fa-cubes mr-3"></i>拼豆图纸结果
+            </h3>
+          </div>
+          <div class="p-6">
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-4">
+                <label class="block text-sm font-medium text-pixel-border">拼豆图纸预览</label>
+                <div class="flex space-x-2">
+                  <button id="preview-zoom-in" class="p-2 bg-pixel-panel border-4 border-pixel-border pixel-button">
+                    <i class="fa fa-search-plus text-pixel-border"></i>
+                  </button>
+                  <button id="preview-zoom-out" class="p-2 bg-pixel-panel border-4 border-pixel-border pixel-button">
+                    <i class="fa fa-search-minus text-pixel-border"></i>
+                  </button>
+                  <button id="clear-preview" class="p-2 bg-accent text-pixel-border border-4 border-pixel-border pixel-button">
+                    <i class="fa fa-trash text-pixel-border"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="bead-pattern-preview" class="border-4 border-pixel-border bg-pixel-bg min-h-[200px] overflow-auto pixel-scrollbar pixel-border">
+                <p class="text-pixel-border text-center py-10 text-sm">生成图纸后将显示预览</p>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-pixel-border mb-4">使用的拼豆色号</label>
+              <div id="used-beads" class="border-4 border-pixel-border bg-pixel-bg max-h-[200px] overflow-y-auto pixel-scrollbar pixel-border">
+                <p class="text-pixel-border p-4 text-sm">生成图纸后将显示使用的色号</p>
+              </div>
+            </div>
+            
+            <div class="flex space-x-4">
+              <button id="deduct-inventory" class="flex-1 py-4 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-minus-circle mr-2"></i>扣除库存
+              </button>
+              <button id="export-pattern" class="flex-1 py-4 bg-accent text-pixel-border border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-download mr-2"></i>导出图纸
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="inventory-management">
+      <div class="pixel-panel rounded-none">
+        <div class="bg-secondary p-4 border-b-4 border-pixel-border">
+          <h3 class="text-lg font-bold text-pixel-bg flex items-center">
+            <i class="fa fa-cubes mr-3"></i>拼豆库存管理
+          </h3>
+        </div>
+        <div class="p-6">
+          <!-- 上传图纸区域 -->
+          <div class="mb-6">
+            <div class="bg-secondary p-4 border-4 border-pixel-border mb-4">
+              <h4 class="text-lg font-medium text-pixel-bg">上传图纸识别色号 <span class="text-xs font-normal">（此识别功能不太智能，请谨慎使用）</span></h4>
+            </div>
+            <div class="border-4 border-dashed border-pixel-border bg-pixel-bg p-8 text-center pixel-border mb-4">
+              <input type="file" id="inventory-image-upload" accept="image/*" class="hidden">
+              <label for="inventory-image-upload" class="cursor-pointer">
+                <div class="w-24 h-24 mx-auto mb-4 bg-accent border-4 border-pixel-border flex items-center justify-center">
+                  <i class="fa fa-cloud-upload text-pixel-border text-3xl"></i>
+                </div>
+                <p class="text-pixel-border mb-2 text-sm">点击或拖拽上传图纸</p>
+                <p class="text-pixel-border text-xs">支持 JPG、PNG、GIF 格式</p>
+              </label>
+            </div>
+            <div id="inventory-image-preview" class="border-4 border-pixel-border bg-pixel-bg min-h-[200px] flex items-center justify-center pixel-border mb-4">
+              <p class="text-pixel-border text-sm">上传图片后将显示预览</p>
+            </div>
+            <div class="flex space-x-4 mb-4">
+              <button id="analyze-image" class="flex-1 py-4 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-magic mr-3"></i>分析图纸
+              </button>
+              <button id="clear-analysis" class="flex-1 py-4 bg-accent text-pixel-border border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-trash mr-3"></i>清空分析
+              </button>
+            </div>
+            <div id="analyzed-beads" class="border-4 border-pixel-border bg-pixel-bg max-h-[200px] overflow-y-auto pixel-scrollbar pixel-border">
+              <p class="text-pixel-border p-4 text-sm">分析图纸后将显示识别的色号</p>
+            </div>
+            <div class="flex space-x-4 mt-4">
+              <button id="deduct-inventory-from-image" class="flex-1 py-4 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-minus-circle mr-2"></i>扣除库存
+              </button>
+              <button id="add-inventory-from-image" class="flex-1 py-4 bg-accent text-pixel-border border-4 border-pixel-border pixel-button text-sm flex items-center justify-center">
+                <i class="fa fa-plus-circle mr-2"></i>增加库存
+              </button>
+            </div>
+          </div>
+          
+          <!-- 我的拼豆库 -->
+          <div class="mb-6">
+            <div class="bg-secondary p-4 border-4 border-pixel-border mb-4">
+              <h4 class="text-lg font-medium text-pixel-bg">我的拼豆库</h4>
+            </div>
+            <div class="flex space-x-4 mb-4">
+              <div class="flex-1 relative">
+                <input type="text" id="my-beads-search" placeholder="搜索色号..." class="w-full bg-pixel-bg border-4 border-pixel-border pixel-input px-4 py-3 pl-12 focus:outline-none transition-all text-sm">
+                <i class="fa fa-search absolute left-4 top-4 text-pixel-border"></i>
+              </div>
+              <button id="add-to-my-beads" class="px-4 py-3 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm">
+                <i class="fa fa-plus mr-2"></i>添加
+              </button>
+            </div>
+            <div id="my-beads-list" class="border-4 border-pixel-border pixel-border">
+              <div class="bg-secondary text-pixel-bg py-3 px-4 font-medium text-sm text-center">
+                我的拼豆
+              </div>
+              <div id="my-beads-items" class="max-h-[300px] overflow-y-auto pixel-scrollbar bg-pixel-bg grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                <!-- My beads items will be generated here -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- 库存列表 -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h4 class="text-lg font-medium text-pixel-border">库存列表</h4>
+              <button id="reset-inventory" class="px-4 py-2 bg-accent text-pixel-border border-4 border-pixel-border pixel-button text-sm">
+                <i class="fa fa-refresh mr-2"></i>重置库存
+              </button>
+            </div>
+            
+            <div class="relative">
+              <input type="text" id="inventory-search" placeholder="搜索色号..." class="w-full bg-pixel-bg border-4 border-pixel-border pixel-input px-4 py-3 pl-12 focus:outline-none transition-all text-sm">
+              <i class="fa fa-search absolute left-4 top-4 text-pixel-border"></i>
+            </div>
+            
+            <div id="inventory-list" class="mt-4 border-4 border-pixel-border pixel-border">
+              <div class="bg-secondary text-pixel-bg py-3 px-4 font-medium text-sm text-center">
+                库存列表
+              </div>
+              <div id="inventory-items" class="max-h-[400px] overflow-y-auto pixel-scrollbar bg-pixel-bg grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                <!-- Inventory items will be generated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden">
+    <div class="bg-pixel-panel border-4 border-pixel-border pixel-border max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto pixel-scrollbar">
+      <div class="p-6 border-b-4 border-pixel-border bg-secondary">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-bold text-pixel-bg">如何使用恒创拼豆工具</h2>
+          <button id="close-help" class="p-2 bg-pixel-panel border-2 border-pixel-border pixel-button">
+            <i class="fa fa-times text-pixel-border"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-primary mb-4">1. 拼豆图纸生成</h3>
+          <p class="text-pixel-border text-sm">上传图片后，系统会自动将图片转换为拼豆图纸，并计算需要使用的色号和数量。</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-primary mb-4">2. 库存管理</h3>
+          <p class="text-pixel-border text-sm">系统默认每个色号有1000颗拼豆。您可以通过增减按钮手动调整库存数量，也可以通过上传图纸自动扣除使用的拼豆数量。</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-primary mb-4">3. 操作步骤</h3>
+          <ol class="list-decimal list-inside text-pixel-border space-y-3 text-sm">
+            <li>在"拼豆图纸生成"标签页上传图片</li>
+            <li>调整网格大小（10x10到100x100）</li>
+            <li>点击"生成拼豆图纸"按钮</li>
+            <li>查看生成的图纸和使用的色号</li>
+            <li>点击"扣除库存"按钮自动扣除使用的拼豆</li>
+            <li>在"库存管理"标签页查看和调整实时库存</li>
+          </ol>
+        </div>
+      </div>
+      <div class="p-6 border-t-4 border-pixel-border flex justify-end">
+        <button id="close-help-btn" class="px-6 py-3 bg-primary text-pixel-bg border-4 border-pixel-border pixel-button text-sm">
+          明白了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="fixed bottom-4 right-4 bg-pixel-panel border-4 border-pixel-border pixel-border px-6 py-4 shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center">
+    <i id="notification-icon" class="fa fa-check-circle text-green-500 mr-3 text-xl"></i>
+    <span id="notification-text" class="text-pixel-border text-sm">操作成功</span>
+  </div>
+
+  <!-- Full Screen Preview Modal -->
+  <div id="fullscreen-preview" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center hidden">
+    <div class="relative max-w-[90vw] max-h-[90vh]">
+      <div class="absolute top-4 right-4 flex space-x-2 z-10">
+        <button id="zoom-in" class="p-2 bg-pixel-panel border-4 border-pixel-border pixel-button">
+          <i class="fa fa-search-plus text-pixel-border text-xl"></i>
+        </button>
+        <button id="zoom-out" class="p-2 bg-pixel-panel border-4 border-pixel-border pixel-button">
+          <i class="fa fa-search-minus text-pixel-border text-xl"></i>
+        </button>
+        <button id="close-fullscreen" class="p-2 bg-pixel-panel border-4 border-pixel-border pixel-button">
+          <i class="fa fa-times text-pixel-border text-xl"></i>
+        </button>
+      </div>
+      <div id="fullscreen-content" class="overflow-auto">
+        <!-- Full screen preview content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 拼豆色卡数据
+    const beadColors = [
+      { code: 'A1', name: '米白色', color: '#FAF4C8' },
+      { code: 'A2', name: '亮白色', color: '#FFFFDD' },
+      { code: 'A3', name: '淡黄色', color: '#FEFF8B' },
+      { code: 'A4', name: '黄色', color: '#FBED56' },
+      { code: 'A5', name: '金黄色', color: '#F4D738' },
+      { code: 'A6', name: '橙色', color: '#FEAC4C' },
+      { code: 'A7', name: '深橙色', color: '#FE8B4C' },
+      { code: 'A8', name: '金黄色', color: '#FFDA45' },
+      { code: 'A9', name: '橙红色', color: '#FF995B' },
+      { code: 'A10', name: '棕色', color: '#F77C31' },
+      { code: 'A11', name: '浅橙色', color: '#FFDD99' },
+      { code: 'A12', name: '珊瑚色', color: '#FE9F72' },
+      { code: 'A13', name: '浅橙色', color: '#FFC365' },
+      { code: 'A14', name: '红色', color: '#FD543D' },
+      { code: 'A15', name: '亮黄色', color: '#FFF365' },
+      { code: 'A16', name: '浅黄色', color: '#FFFF9F' },
+      { code: 'A17', name: '淡黄色', color: '#FFE36E' },
+      { code: 'A18', name: '浅橙色', color: '#FEBE7D' },
+      { code: 'A19', name: '珊瑚色', color: '#FD7C72' },
+      { code: 'A20', name: '橙黄色', color: '#FFD568' },
+      { code: 'A21', name: '浅橙色', color: '#FFE395' },
+      { code: 'A22', name: '黄绿色', color: '#F4F57D' },
+      { code: 'A23', name: '肤色', color: '#E6C9B7' },
+      { code: 'A24', name: '淡绿色', color: '#F7F8A2' },
+      { code: 'A25', name: '浅橙色', color: '#FFD67D' },
+      { code: 'A26', name: '金黄色', color: '#FFC830' },
+      { code: 'B1', name: '黄绿色', color: '#E6EE31' },
+      { code: 'B2', name: '亮绿色', color: '#63F347' },
+      { code: 'B3', name: '淡绿色', color: '#9EF780' },
+      { code: 'B4', name: '绿色', color: '#5DE035' },
+      { code: 'B5', name: '绿色', color: '#35E352' },
+      { code: 'B6', name: '青绿色', color: '#65E2A6' },
+      { code: 'B7', name: '深绿色', color: '#3DAF80' },
+      { code: 'B8', name: '深紫色', color: '#1C0C4F' },
+      { code: 'B9', name: '深绿色', color: '#27523A' },
+      { code: 'B10', name: '青绿色', color: '#95D3C2' },
+      { code: 'B11', name: '橄榄绿', color: '#5D722A' },
+      { code: 'B12', name: '深绿色', color: '#166F41' },
+      { code: 'B13', name: '淡绿色', color: '#CAEB7B' },
+      { code: 'B14', name: '亮绿色', color: '#ADE946' },
+      { code: 'B15', name: '深绿色', color: '#2E5132' },
+      { code: 'B16', name: '淡绿色', color: '#C5ED9C' },
+      { code: 'B17', name: '橄榄绿', color: '#9BB13A' },
+      { code: 'B18', name: '黄绿色', color: '#E6EE49' },
+      { code: 'B19', name: '青绿色', color: '#24B88C' },
+      { code: 'B20', name: '淡绿色', color: '#C2F0CC' },
+      { code: 'B21', name: '青绿色', color: '#156A6B' },
+      { code: 'B22', name: '深青色', color: '#0B3C43' },
+      { code: 'B23', name: '深绿色', color: '#303A21' },
+      { code: 'B24', name: '淡绿色', color: '#EEFCA5' },
+      { code: 'B25', name: '青绿色', color: '#4E846D' },
+      { code: 'B26', name: '棕色', color: '#8D7A35' },
+      { code: 'B27', name: '淡绿色', color: '#CCE1AF' },
+      { code: 'B28', name: '青绿色', color: '#9EE5B9' },
+      { code: 'B29', name: '黄绿色', color: '#C5E254' },
+      { code: 'B30', name: '淡绿色', color: '#E2FCB1' },
+      { code: 'B31', name: '淡绿色', color: '#B0E792' },
+      { code: 'B32', name: '橄榄绿', color: '#9CAB5A' },
+      { code: 'C1', name: '淡绿色', color: '#E8FFE7' },
+      { code: 'C2', name: '浅蓝色', color: '#A9F9FC' },
+      { code: 'C3', name: '浅蓝色', color: '#A0E2FB' },
+      { code: 'C4', name: '亮蓝色', color: '#41CCFF' },
+      { code: 'C5', name: '蓝色', color: '#01ACEB' },
+      { code: 'C6', name: '蓝色', color: '#50AAF0' },
+      { code: 'C7', name: '深蓝色', color: '#3677D2' },
+      { code: 'C8', name: '深蓝色', color: '#0F54C0' },
+      { code: 'C9', name: '深蓝色', color: '#324BCA' },
+      { code: 'C10', name: '浅蓝色', color: '#3EBCE2' },
+      { code: 'C11', name: '青蓝色', color: '#28DDDE' },
+      { code: 'C12', name: '深蓝色', color: '#1C334D' },
+      { code: 'C13', name: '淡蓝色', color: '#CDE8FF' },
+      { code: 'C14', name: '浅蓝色', color: '#D5FDFF' },
+      { code: 'C15', name: '青蓝色', color: '#22C4C6' },
+      { code: 'C16', name: '深蓝色', color: '#1557A8' },
+      { code: 'C17', name: '亮蓝色', color: '#04D1F6' },
+      { code: 'C18', name: '深蓝色', color: '#1D3344' },
+      { code: 'C19', name: '青蓝色', color: '#1887A2' },
+      { code: 'C20', name: '深蓝色', color: '#176DAF' },
+      { code: 'C21', name: '淡蓝色', color: '#BEDDFF' },
+      { code: 'C22', name: '青蓝色', color: '#67B4BE' },
+      { code: 'C23', name: '淡蓝色', color: '#C8E2FF' },
+      { code: 'C24', name: '浅蓝色', color: '#7CC4FF' },
+      { code: 'C25', name: '青蓝色', color: '#A9E5E5' },
+      { code: 'C26', name: '蓝色', color: '#3CAED8' },
+      { code: 'C27', name: '淡蓝色', color: '#D3DFFA' },
+      { code: 'C28', name: '淡蓝色', color: '#BBCFED' },
+      { code: 'C29', name: '深蓝色', color: '#34488E' },
+      { code: 'D1', name: '淡紫色', color: '#AEB4F2' },
+      { code: 'D2', name: '紫色', color: '#858EDD' },
+      { code: 'D3', name: '深蓝色', color: '#2F54AF' },
+      { code: 'D4', name: '深蓝色', color: '#182A84' },
+      { code: 'D5', name: '紫色', color: '#B843C5' },
+      { code: 'D6', name: '紫色', color: '#AC7BDE' },
+      { code: 'D7', name: '深紫色', color: '#8854B3' },
+      { code: 'D8', name: '淡紫色', color: '#E2D3FF' },
+      { code: 'D9', name: '淡紫色', color: '#D5B9F8' },
+      { code: 'D10', name: '深紫色', color: '#361B51' },
+      { code: 'D11', name: '淡紫色', color: '#B9BAE1' },
+      { code: 'D12', name: '淡紫色', color: '#DE9AD4' },
+      { code: 'D13', name: '深紫色', color: '#B90095' },
+      { code: 'D14', name: '深紫色', color: '#8B279B' },
+      { code: 'D15', name: '深蓝色', color: '#2F1F90' },
+      { code: 'D16', name: '淡紫色', color: '#E3E1EE' },
+      { code: 'D17', name: '淡蓝色', color: '#C4D4F6' },
+      { code: 'D18', name: '紫色', color: '#A45EC7' },
+      { code: 'D19', name: '淡紫色', color: '#D8C3D7' },
+      { code: 'D20', name: '深紫色', color: '#9C32B2' },
+      { code: 'D21', name: '深紫色', color: '#9A009B' },
+      { code: 'D22', name: '深蓝色', color: '#333A95' },
+      { code: 'D23', name: '淡紫色', color: '#EBDAFC' },
+      { code: 'D24', name: '紫色', color: '#7786E5' },
+      { code: 'D25', name: '深蓝色', color: '#494FC7' },
+      { code: 'D26', name: '淡紫色', color: '#DFC2F8' },
+      { code: 'E1', name: '淡粉色', color: '#FDD3CC' },
+      { code: 'E2', name: '粉色', color: '#FECODF' },
+      { code: 'E3', name: '亮粉色', color: '#FFB7E7' },
+      { code: 'E4', name: '玫红色', color: '#E8649E' },
+      { code: 'E5', name: '亮粉色', color: '#F551A2' },
+      { code: 'E6', name: '玫红色', color: '#F13D74' },
+      { code: 'E7', name: '深玫红色', color: '#C63478' },
+      { code: 'E8', name: '淡粉色', color: '#FFDBE9' },
+      { code: 'E9', name: '玫红色', color: '#E970CC' },
+      { code: 'E10', name: '深玫红色', color: '#D33793' },
+      { code: 'E11', name: '淡粉色', color: '#FCDDD2' },
+      { code: 'E12', name: '粉色', color: '#F78FC3' },
+      { code: 'E13', name: '深玫红色', color: '#B5006D' },
+      { code: 'E14', name: '肤色', color: '#FFD1BA' },
+      { code: 'E15', name: '灰色', color: '#B8C7C9' },
+      { code: 'E16', name: '淡粉色', color: '#FFF3EB' },
+      { code: 'E17', name: '淡粉色', color: '#FFE2EA' },
+      { code: 'E18', name: '粉色', color: '#FFC7DB' },
+      { code: 'E19', name: '粉色', color: '#FEBAD5' },
+      { code: 'E20', name: '淡粉色', color: '#D8C7D1' },
+      { code: 'E21', name: '棕色', color: '#BD9DA1' },
+      { code: 'E22', name: '棕色', color: '#B785A1' },
+      { code: 'E23', name: '深棕色', color: '#937A8D' },
+      { code: 'E24', name: '淡紫色', color: '#E1BCE8' },
+      { code: 'F1', name: '珊瑚色', color: '#FD957B' },
+      { code: 'F2', name: '红色', color: '#FC3D46' },
+      { code: 'F3', name: '红色', color: '#F74941' },
+      { code: 'F4', name: '红色', color: '#FC283C' },
+      { code: 'F5', name: '红色', color: '#F7002F' },
+      { code: 'F6', name: '深棕色', color: '#943630' },
+      { code: 'F7', name: '深红色', color: '#971937' },
+      { code: 'F8', name: '深红色', color: '#BC0028' },
+      { code: 'F9', name: '玫红色', color: '#E2677A' },
+      { code: 'F10', name: '深棕色', color: '#8A4526' },
+      { code: 'F11', name: '深棕色', color: '#5A2121' },
+      { code: 'F12', name: '红色', color: '#FD4E6A' },
+      { code: 'F13', name: '红色', color: '#F35744' },
+      { code: 'F14', name: '淡红色', color: '#FFA9AD' },
+      { code: 'F15', name: '深红色', color: '#D30022' },
+      { code: 'F16', name: '珊瑚色', color: '#FEC2A6' },
+      { code: 'F17', name: '棕色', color: '#E69C79' },
+      { code: 'F18', name: '棕色', color: '#D37C46' },
+      { code: 'F19', name: '深红色', color: '#C1444A' },
+      { code: 'F20', name: '淡红色', color: '#CD9391' },
+      { code: 'F21', name: '粉色', color: '#F7B4C6' },
+      { code: 'F22', name: '粉色', color: '#FDC0D0' },
+      { code: 'F23', name: '珊瑚色', color: '#F67E66' },
+      { code: 'F24', name: '粉色', color: '#E698AA' },
+      { code: 'F25', name: '红色', color: '#E54B4F' },
+      { code: 'G1', name: '肤色', color: '#FFE2CE' },
+      { code: 'G2', name: '肤色', color: '#FFC4AA' },
+      { code: 'G3', name: '肤色', color: '#F4C3A5' },
+      { code: 'G4', name: '棕色', color: '#E1B383' },
+      { code: 'G5', name: '金黄色', color: '#EDB045' },
+      { code: 'G6', name: '金黄色', color: '#E99C17' },
+      { code: 'G7', name: '深棕色', color: '#9D5B3E' },
+      { code: 'G8', name: '深棕色', color: '#753B32' },
+      { code: 'G9', name: '棕色', color: '#E6B483' },
+      { code: 'G10', name: '棕色', color: '#D98C39' },
+      { code: 'G11', name: '浅棕色', color: '#E0C593' },
+      { code: 'G12', name: '浅橙色', color: '#FFC890' },
+      { code: 'G13', name: '棕色', color: '#B7714A' },
+      { code: 'G14', name: '深棕色', color: '#8D614C' },
+      { code: 'G15', name: '米白色', color: '#FCF9E0' },
+      { code: 'G16', name: '肤色', color: '#F2D9BA' },
+      { code: 'G17', name: '深棕色', color: '#7B524B' },
+      { code: 'G18', name: '肤色', color: '#FFE4CC' },
+      { code: 'G19', name: '棕色', color: '#E07935' },
+      { code: 'G20', name: '深棕色', color: '#A94023' },
+      { code: 'G21', name: '棕色', color: '#B88588' },
+      { code: 'H1', name: '透明', color: '#FDFBFF' },
+      { code: 'H2', name: '白色', color: '#FEFFFF' },
+      { code: 'H3', name: '浅灰色', color: '#B6B1BA' },
+      { code: 'H4', name: '灰色', color: '#89858C' },
+      { code: 'H5', name: '深灰色', color: '#48464E' },
+      { code: 'H6', name: '黑灰色', color: '#2F2B2F' },
+      { code: 'H7', name: '黑色', color: '#000000' },
+      { code: 'H8', name: '淡粉色', color: '#E7D6DB' },
+      { code: 'H9', name: '灰色', color: '#EDEDED' },
+      { code: 'H10', name: '淡粉色', color: '#EEE9EA' },
+      { code: 'H11', name: '灰色', color: '#CECDD5' },
+      { code: 'H12', name: '米白色', color: '#FFF5ED' },
+      { code: 'H13', name: '米白色', color: '#F5ECD2' },
+      { code: 'H14', name: '淡绿色', color: '#CFD7D3' },
+      { code: 'H15', name: '灰色', color: '#98A6A8' },
+      { code: 'H16', name: '黑色', color: '#1D1414' },
+      { code: 'H17', name: '灰色', color: '#F1EDED' },
+      { code: 'H18', name: '米白色', color: '#FFFDF0' },
+      { code: 'H19', name: '米白色', color: '#F6EFE2' },
+      { code: 'H20', name: '灰色', color: '#949FA3' },
+      { code: 'H21', name: '米白色', color: '#FFFBE1' },
+      { code: 'H22', name: '灰色', color: '#CACAD4' },
+      { code: 'H23', name: '灰色', color: '#9A9D94' },
+      { code: 'M1', name: '淡绿色', color: '#BCC6B8' },
+      { code: 'M2', name: '绿色', color: '#8AA386' },
+      { code: 'M3', name: '青绿色', color: '#697D80' },
+      { code: 'M4', name: '米白色', color: '#E3D2BC' },
+      { code: 'M5', name: '淡绿色', color: '#D0CCAA' },
+      { code: 'M6', name: '橄榄绿', color: '#B0A782' },
+      { code: 'M7', name: '玫红色', color: '#B44A97' },
+      { code: 'M8', name: '棕色', color: '#B38281' },
+      { code: 'M9', name: '棕色', color: '#A58767' },
+      { code: 'M10', name: '淡紫色', color: '#C5B2BC' },
+      { code: 'M11', name: '紫色', color: '#9F7594' },
+      { code: 'M12', name: '深棕色', color: '#644749' },
+      { code: 'M13', name: '棕色', color: '#D19066' },
+      { code: 'M14', name: '棕色', color: '#C77362' },
+      { code: 'M15', name: '灰色', color: '#757D7B' },
+      { code: 'P1', name: '白色', color: '#FCF7F8' },
+      { code: 'P2', name: '灰色', color: '#B0A9AC' },
+      { code: 'P3', name: '淡绿色', color: '#AFDCAB' },
+      { code: 'P4', name: '珊瑚色', color: '#FEA49F' },
+      { code: 'P5', name: '橙色', color: '#EE8C3E' },
+      { code: 'P6', name: '青绿色', color: '#5FD0A7' },
+      { code: 'P7', name: '橙色', color: '#EB9270' },
+      { code: 'P8', name: '黄色', color: '#F0D958' },
+      { code: 'P9', name: '灰色', color: '#D9D9D9' },
+      { code: 'P10', name: '淡紫色', color: '#D9C7EA' },
+      { code: 'P11', name: '淡绿色', color: '#F3ECC9' },
+      { code: 'P12', name: '淡蓝色', color: '#E6EEF2' },
+      { code: 'P13', name: '淡蓝色', color: '#AACBEF' },
+      { code: 'P14', name: '深蓝色', color: '#3376B0' },
+      { code: 'P15', name: '绿色', color: '#668575' },
+      { code: 'P16', name: '金黄色', color: '#FEBF45' },
+      { code: 'P17', name: '橙色', color: '#FEA324' },
+      { code: 'P18', name: '珊瑚色', color: '#FEB89F' },
+      { code: 'P19', name: '淡粉色', color: '#FFE0E9' },
+      { code: 'P20', name: '粉色', color: '#FEBECF' },
+      { code: 'P21', name: '淡粉色', color: '#ECBEBF' },
+      { code: 'P22', name: '肤色', color: '#E4A89F' },
+      { code: 'P23', name: '棕色', color: '#A56268' },
+      { code: 'R1', name: '红色', color: '#D50D21' },
+      { code: 'R2', name: '玫红色', color: '#F92F83' },
+      { code: 'R3', name: '橙色', color: '#FD8324' },
+      { code: 'R4', name: '黄色', color: '#F8EC31' },
+      { code: 'R5', name: '绿色', color: '#35C75B' },
+      { code: 'R6', name: '青绿色', color: '#23B891' },
+      { code: 'R7', name: '青蓝色', color: '#19779D' },
+      { code: 'R8', name: '深蓝色', color: '#1A60C3' },
+      { code: 'R9', name: '紫色', color: '#9A58B4' },
+      { code: 'R10', name: '金黄色', color: '#FFDB4C' },
+      { code: 'R11', name: '淡粉色', color: '#FFEBFA' },
+      { code: 'R12', name: '米白色', color: '#D8D5CE' },
+      { code: 'R13', name: '深灰色', color: '#55514C' },
+      { code: 'R14', name: '青绿色', color: '#9FE4DF' },
+      { code: 'R15', name: '浅蓝色', color: '#77CEE9' },
+      { code: 'R16', name: '青蓝色', color: '#3ECFCA' },
+      { code: 'R17', name: '绿色', color: '#4A867A' },
+      { code: 'R18', name: '淡绿色', color: '#7FCD9D' },
+      { code: 'R19', name: '黄绿色', color: '#CDE55D' },
+      { code: 'R20', name: '肤色', color: '#E8C7B4' },
+      { code: 'R21', name: '棕色', color: '#AD6F3C' },
+      { code: 'R22', name: '深棕色', color: '#6C372F' },
+      { code: 'R23', name: '橙色', color: '#FEB872' },
+      { code: 'R24', name: '淡红色', color: '#F3C1C0' },
+      { code: 'R25', name: '棕色', color: '#C9675C' },
+      { code: 'R26', name: '淡紫色', color: '#D293BE' },
+      { code: 'R27', name: '粉色', color: '#EA8CB1' },
+      { code: 'R28', name: '紫色', color: '#9C87D6' },
+      { code: 'T1', name: '白色', color: '#FFFFFF' },
+      { code: 'Y1', name: '粉色', color: '#FD6FB4' },
+      { code: 'Y2', name: '珊瑚色', color: '#FEB481' },
+      { code: 'Y3', name: '淡绿色', color: '#D7FAA0' },
+      { code: 'Y4', name: '浅蓝色', color: '#8BDBFA' },
+      { code: 'Y5', name: '紫色', color: '#E987EA' },
+      { code: 'ZG1', name: '淡粉色', color: '#DAABB3' },
+      { code: 'ZG2', name: '肤色', color: '#D6AA87' },
+      { code: 'ZG3', name: '淡绿色', color: '#C1BD8D' },
+      { code: 'ZG4', name: '淡绿色', color: '#96B89F' },
+      { code: 'ZG5', name: '蓝色', color: '#849DC6' },
+      { code: 'ZG6', name: '浅蓝色', color: '#94BFE2' },
+      { code: 'ZG7', name: '淡紫色', color: '#E2A9D2' },
+      { code: 'ZG8', name: '紫色', color: '#AB91C0' }
+    ];
+
+    // 全局变量
+    let inventory = {};
+    let currentImage = null;
+    let currentPattern = null;
+    let usedBeads = {};
+    let analyzedBeads = {};
+    let myBeads = [];
+    
+    // 画图相关变量
+    let drawingCanvas = null;
+    let drawingContext = null;
+    let canvasSize = 15;
+    let brushSize = 1;
+    let currentTool = 'brush';
+    let currentColor = '#000000';
+    let isDrawing = false;
+    let history = [];
+    
+    // 基础24色
+    const basicColors = [
+      '#000000', // 黑色
+      '#FFFFFF', // 白色
+      '#FF0000', // 红色
+      '#00FF00', // 绿色
+      '#0000FF', // 蓝色
+      '#FFFF00', // 黄色
+      '#FF00FF', // 洋红色
+      '#00FFFF', // 青色
+      '#FFA500', // 橙色
+      '#800080', // 紫色
+      '#A52A2A', // 棕色
+      '#808080', // 灰色
+      '#008000', // 深绿色
+      '#000080', // 深蓝色
+      '#800000', // 深红色
+      '#808000', // 橄榄色
+      '#FFC0CB', // 粉色
+      '#A9A9A9', // 暗灰色
+      '#FFD700', // 金色
+      '#DDA0DD', //  plum
+      '#87CEEB', //  sky blue
+      '#98FB98', //  pale green
+      '#FFB6C1', //  light pink
+      '#E6E6FA'  //  lavender
+    ];
+
+    // DOM 元素
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const imageUpload = document.getElementById('image-upload');
+    const imagePreview = document.getElementById('image-preview');
+    const gridSize = document.getElementById('grid-size');
+    const generateBeadPattern = document.getElementById('generate-bead-pattern');
+    const beadPatternPreview = document.getElementById('bead-pattern-preview');
+    const usedBeadsContainer = document.getElementById('used-beads');
+    const deductInventory = document.getElementById('deduct-inventory');
+    const exportPattern = document.getElementById('export-pattern');
+    const inventoryItems = document.getElementById('inventory-items');
+    const inventorySearch = document.getElementById('inventory-search');
+    const resetInventory = document.getElementById('reset-inventory');
+    const helpButton = document.getElementById('help-button');
+    const helpModal = document.getElementById('help-modal');
+    const closeHelp = document.getElementById('close-help');
+    const closeHelpBtn = document.getElementById('close-help-btn');
+    const notification = document.getElementById('notification');
+    const notificationIcon = document.getElementById('notification-icon');
+    const notificationText = document.getElementById('notification-text');
+    
+    // 画图相关DOM元素
+    const uploadTab = document.getElementById('upload-tab');
+    const drawTab = document.getElementById('draw-tab');
+    const uploadSection = document.getElementById('upload-section');
+    const drawSection = document.getElementById('draw-section');
+    const drawCanvasSize = document.getElementById('draw-canvas-size');
+    const drawCanvasSizeValue = document.getElementById('draw-canvas-size-value');
+    const drawBrush = document.getElementById('draw-brush');
+    const drawEraser = document.getElementById('draw-eraser');
+    const drawUndo = document.getElementById('draw-undo');
+    const drawClear = document.getElementById('draw-clear');
+    const brushSizeInput = document.getElementById('brush-size');
+    const brushSizeValue = document.getElementById('brush-size-value');
+    const colorPalette = document.getElementById('color-palette');
+    const drawingCanvasContainer = document.getElementById('drawing-canvas-container');
+    const colorSearch = document.getElementById('color-search');
+    const colorPicker = document.getElementById('color-picker');
+    const addColorBtn = document.getElementById('add-color');
+    const colorSearchResults = document.getElementById('color-search-results');
+    const searchResultsContainer = document.getElementById('search-results-container');
+    
+    // 库存管理页面元素
+    const inventoryImageUpload = document.getElementById('inventory-image-upload');
+    const inventoryImagePreview = document.getElementById('inventory-image-preview');
+    const analyzeImage = document.getElementById('analyze-image');
+    const clearAnalysis = document.getElementById('clear-analysis');
+    const analyzedBeadsContainer = document.getElementById('analyzed-beads');
+    const deductInventoryFromImage = document.getElementById('deduct-inventory-from-image');
+    const addInventoryFromImage = document.getElementById('add-inventory-from-image');
+    
+    // 我的拼豆库元素
+    const myBeadsSearch = document.getElementById('my-beads-search');
+    const addToMyBeads = document.getElementById('add-to-my-beads');
+    const myBeadsItems = document.getElementById('my-beads-items');
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeInventory();
+      initializeMyBeads();
+      renderInventory();
+      renderMyBeads();
+      initializeDrawing();
+      setupEventListeners();
+    });
+    
+    // 初始化画图功能
+    function initializeDrawing() {
+      // 初始化颜色选择器
+      initializeColorPalette();
+      // 创建画布
+      createDrawingCanvas();
+    }
+    
+    // 初始化颜色选择器
+    function initializeColorPalette() {
+      renderColorPalette();
+      setupColorEventListeners();
+    }
+    
+    // 渲染颜色选择器
+    function renderColorPalette() {
+      colorPalette.innerHTML = '';
+      basicColors.forEach((color, index) => {
+        const colorItem = document.createElement('div');
+        colorItem.className = 'w-6 h-6 border-2 border-pixel-border cursor-pointer relative';
+        colorItem.style.backgroundColor = color;
+        if (color === currentColor) {
+          colorItem.classList.add('ring-2', 'ring-accent');
+        }
+        
+        // 添加颜色点击事件
+        colorItem.addEventListener('click', function() {
+          // 移除之前选中的颜色
+          document.querySelectorAll('#color-palette > div').forEach(item => {
+            item.classList.remove('ring-2', 'ring-accent');
+          });
+          // 添加选中状态
+          this.classList.add('ring-2', 'ring-accent');
+          currentColor = color;
+        });
+        
+        // 添加删除按钮（仅对非默认颜色）
+        if (index >= 24) { // 前24个是默认颜色，不可删除
+          const deleteBtn = document.createElement('div');
+          deleteBtn.className = 'absolute top-[-5px] right-[-5px] w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold cursor-pointer';
+          deleteBtn.textContent = '×';
+          deleteBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // 阻止冒泡，避免触发颜色选择
+            basicColors.splice(index, 1);
+            renderColorPalette();
+          });
+          colorItem.appendChild(deleteBtn);
+        }
+        
+        colorPalette.appendChild(colorItem);
+      });
+    }
+    
+    // 设置颜色相关事件监听器
+    function setupColorEventListeners() {
+      // 颜色搜索
+      colorSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        if (searchTerm.length > 0) {
+          // 从beadColors中搜索颜色，只搜索颜色代码和颜色名称
+          const results = beadColors.filter(bead => {
+            return bead.code.toLowerCase().includes(searchTerm) || 
+                   bead.name.toLowerCase().includes(searchTerm);
+          });
+          
+          // 显示搜索结果
+          colorSearchResults.classList.remove('hidden');
+          searchResultsContainer.innerHTML = '';
+          
+          results.forEach(bead => {
+            const colorItem = document.createElement('div');
+            colorItem.className = 'w-6 h-6 border-2 border-pixel-border cursor-pointer relative';
+            colorItem.style.backgroundColor = bead.color;
+            
+            // 添加颜色点击事件
+            colorItem.addEventListener('click', function() {
+              if (!basicColors.includes(bead.color)) {
+                basicColors.push(bead.color);
+                renderColorPalette();
+                showNotification(`已添加颜色 ${bead.code}`, 'check-circle', 'green-500');
+              }
+            });
+            
+            // 添加颜色代码
+            const codeLabel = document.createElement('div');
+            codeLabel.className = 'absolute bottom-[-10px] left-0 right-0 text-center text-xs text-pixel-border';
+            codeLabel.textContent = bead.code;
+            colorItem.appendChild(codeLabel);
+            
+            searchResultsContainer.appendChild(colorItem);
+          });
+        } else {
+          // 隐藏搜索结果
+          colorSearchResults.classList.add('hidden');
+        }
+      });
+      
+      // 添加颜色
+      addColorBtn.addEventListener('click', function() {
+        const newColor = colorPicker.value;
+        if (!basicColors.includes(newColor)) {
+          basicColors.push(newColor);
+          renderColorPalette();
+          showNotification('已添加自定义颜色', 'check-circle', 'green-500');
+        }
+      });
+    }
+    
+    // 创建画图画布
+    function createDrawingCanvas() {
+      // 清除之前的画布
+      drawingCanvasContainer.innerHTML = '';
+      
+      // 设置容器样式为居中对齐
+      drawingCanvasContainer.style.display = 'flex';
+      drawingCanvasContainer.style.justifyContent = 'center';
+      drawingCanvasContainer.style.alignItems = 'center';
+      drawingCanvasContainer.style.minHeight = '300px';
+      
+      // 创建新画布
+      drawingCanvas = document.createElement('canvas');
+      const cellSize = 20; // 每个单元格的大小
+      drawingCanvas.width = canvasSize * cellSize;
+      drawingCanvas.height = canvasSize * cellSize;
+      drawingCanvas.style.border = '1px solid #ccc';
+      drawingCanvas.style.imageRendering = 'pixelated';
+      
+      drawingCanvasContainer.appendChild(drawingCanvas);
+      drawingContext = drawingCanvas.getContext('2d');
+      
+      // 绘制网格
+      drawGrid();
+      
+      // 保存初始状态到历史记录
+      saveHistory();
+      
+      // 添加鼠标事件监听器
+      drawingCanvas.addEventListener('mousedown', startDrawing);
+      drawingCanvas.addEventListener('mousemove', draw);
+      drawingCanvas.addEventListener('mouseup', stopDrawing);
+      drawingCanvas.addEventListener('mouseout', stopDrawing);
+      
+      // 添加触摸事件监听器（移动设备）
+      drawingCanvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        const rect = drawingCanvas.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const y = e.touches[0].clientY - rect.top;
+        startDrawing({ clientX: x + rect.left, clientY: y + rect.top });
+      });
+      
+      drawingCanvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        const rect = drawingCanvas.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const y = e.touches[0].clientY - rect.top;
+        draw({ clientX: x + rect.left, clientY: y + rect.top });
+      });
+      
+      drawingCanvas.addEventListener('touchend', stopDrawing);
+    }
+    
+    // 绘制网格
+    function drawGrid() {
+      const cellSize = 20;
+      drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      
+      // 绘制背景
+      drawingContext.fillStyle = '#ffffff';
+      drawingContext.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      
+      // 绘制网格线
+      drawingContext.strokeStyle = '#e0e0e0';
+      drawingContext.lineWidth = 1;
+      
+      for (let i = 0; i <= canvasSize; i++) {
+        // 垂直线
+        drawingContext.beginPath();
+        drawingContext.moveTo(i * cellSize, 0);
+        drawingContext.lineTo(i * cellSize, canvasSize * cellSize);
+        drawingContext.stroke();
+        
+        // 水平线
+        drawingContext.beginPath();
+        drawingContext.moveTo(0, i * cellSize);
+        drawingContext.lineTo(canvasSize * cellSize, i * cellSize);
+        drawingContext.stroke();
+      }
+    }
+    
+    // 开始画图
+    function startDrawing(e) {
+      isDrawing = true;
+      // 开始绘画时保存状态
+      saveHistory();
+      draw(e);
+    }
+    
+    // 画图
+    function draw(e) {
+      if (!isDrawing) return;
+      
+      const rect = drawingCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / 20);
+      const y = Math.floor((e.clientY - rect.top) / 20);
+      
+      if (x >= 0 && x < canvasSize && y >= 0 && y < canvasSize) {
+        const cellSize = 20;
+        
+        // 绘制
+        drawingContext.fillStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+        
+        // 处理画笔大小
+        for (let i = 0; i < brushSize; i++) {
+          for (let j = 0; j < brushSize; j++) {
+            const nx = x + i;
+            const ny = y + j;
+            if (nx < canvasSize && ny < canvasSize) {
+              drawingContext.fillRect(nx * cellSize, ny * cellSize, cellSize, cellSize);
+            }
+          }
+        }
+      }
+    }
+    
+    // 停止画图
+    function stopDrawing() {
+      isDrawing = false;
+      // 结束绘画时保存状态
+      saveHistory();
+    }
+    
+    // 保存历史记录
+    function saveHistory() {
+      const currentState = drawingCanvas.toDataURL();
+      // 只保存与上一个状态不同的状态
+      if (history.length === 0 || history[history.length - 1] !== currentState) {
+        history.push(currentState);
+        // 限制历史记录长度
+        if (history.length > 20) {
+          history.shift();
+        }
+      }
+    }
+    
+    // 从画图生成拼豆图纸
+    function generatePatternFromDrawing() {
+      const cellSize = 20;
+      const pattern = [];
+      
+      for (let y = 0; y < canvasSize; y++) {
+        const row = [];
+        for (let x = 0; x < canvasSize; x++) {
+          // 获取像素颜色
+          const pixel = drawingContext.getImageData(x * cellSize, y * cellSize, 1, 1).data;
+          const r = pixel[0];
+          const g = pixel[1];
+          const b = pixel[2];
+          
+          // 转换为十六进制颜色
+          const hexColor = rgbToHex(r, g, b);
+          
+          // 找到最接近的拼豆颜色
+          let closestBead = beadColors[0];
+          let minDistance = Infinity;
+          
+          beadColors.forEach(bead => {
+            const distance = colorDistance(hexColor, bead.color);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestBead = bead;
+            }
+          });
+          
+          row.push({
+            code: closestBead.code,
+            color: closestBead.color
+          });
+        }
+        pattern.push(row);
+      }
+      
+      return pattern;
+    }
+    
+    // 计算使用的拼豆
+    function calculateUsedBeads(pattern) {
+      usedBeads = {};
+      
+      pattern.forEach(row => {
+        row.forEach(bead => {
+          if (!usedBeads[bead.code]) {
+            usedBeads[bead.code] = 0;
+          }
+          usedBeads[bead.code]++;
+        });
+      });
+      
+      renderUsedBeads(usedBeads);
+    }
+    
+    // RGB转十六进制
+    function rgbToHex(r, g, b) {
+      return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+    
+    // 颜色距离计算
+    function colorDistance(hex1, hex2) {
+      const rgb1 = hexToRgb(hex1);
+      const rgb2 = hexToRgb(hex2);
+      return Math.sqrt(
+        Math.pow(rgb1.r - rgb2.r, 2) +
+        Math.pow(rgb1.g - rgb2.g, 2) +
+        Math.pow(rgb1.b - rgb2.b, 2)
+      );
+    }
+    
+    // 十六进制转RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 };
+    }
+
+    // 初始化库存
+    function initializeInventory() {
+      // 尝试从本地存储加载库存数据
+      const savedInventory = localStorage.getItem('perlerInventory');
+      if (savedInventory) {
+        inventory = JSON.parse(savedInventory);
+      } else {
+        // 初始库存1000颗
+        beadColors.forEach(bead => {
+          inventory[bead.code] = 1000;
+        });
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+      }
+    }
+    
+    // 初始化我的拼豆库
+    function initializeMyBeads() {
+      // 尝试从本地存储加载我的拼豆库数据
+      const savedMyBeads = localStorage.getItem('perlerMyBeads');
+      if (savedMyBeads) {
+        myBeads = JSON.parse(savedMyBeads);
+      } else {
+        // 初始为空
+        myBeads = [];
+        // 保存到本地存储
+        localStorage.setItem('perlerMyBeads', JSON.stringify(myBeads));
+      }
+    }
+    
+    // 渲染我的拼豆库
+    function renderMyBeads() {
+      myBeadsItems.innerHTML = '';
+      
+      if (myBeads.length === 0) {
+        myBeadsItems.innerHTML = '<p class="text-pixel-border p-4 text-sm text-center">暂无拼豆，请搜索并添加</p>';
+        return;
+      }
+      
+      myBeads.forEach(beadCode => {
+        const bead = beadColors.find(b => b.code === beadCode);
+        if (bead) {
+          const item = document.createElement('div');
+          item.className = 'my-bead-item flex flex-col items-center py-3 px-4 border-4 border-pixel-border pixel-border hover:bg-pixel-panel';
+          item.dataset.code = bead.code;
+          
+          item.innerHTML = `
+            <div class="flex flex-col space-y-4 w-full">
+              <div class="w-full relative h-10 border-2 border-pixel-border rounded-lg">
+                <div class="absolute inset-0 flex">
+                  <div class="w-1/2 flex items-center justify-center font-medium text-sm font-black" style="background-color: ${bead.color}; color: #fff; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
+                    ${bead.code}
+                  </div>
+                  <div class="w-1/2 flex items-center justify-center text-sm bg-pixel-bg">
+                    ${bead.name}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between w-full">
+                <span class="inventory-quantity font-medium text-sm font-black ${inventory[bead.code] < 100 ? 'text-red-500' : inventory[bead.code] < 500 ? 'text-yellow-500' : 'text-green-500'}">库存: ${inventory[bead.code]}</span>
+                <div class="flex items-center space-x-2">
+                  <button class="decrease-btn px-2 py-1 bg-pixel-panel border-2 border-pixel-border pixel-button rounded-lg" data-code="${bead.code}">
+                    <i class="fa fa-minus text-pixel-border"></i>
+                  </button>
+                  <input type="number" class="inventory-input w-24 text-center bg-pixel-bg border-2 border-t-0 border-b-0 border-pixel-border text-sm" value="${inventory[bead.code]}" data-code="${bead.code}">
+                  <button class="increase-btn px-2 py-1 bg-pixel-panel border-2 border-pixel-border pixel-button rounded-lg" data-code="${bead.code}">
+                    <i class="fa fa-plus text-pixel-border"></i>
+                  </button>
+                  <button class="remove-from-my-beads px-3 py-1 bg-accent text-pixel-border border-2 border-pixel-border pixel-button rounded-lg" data-code="${bead.code}">
+                    <i class="fa fa-trash text-pixel-border"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          myBeadsItems.appendChild(item);
+        }
+      });
+      
+      // 添加删除按钮事件监听器
+      addMyBeadsEventListeners();
+    }
+    
+    // 添加我的拼豆库事件监听器
+    function addMyBeadsEventListeners() {
+      // 删除按钮
+      document.querySelectorAll('.remove-from-my-beads').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const code = this.dataset.code;
+          myBeads = myBeads.filter(beadCode => beadCode !== code);
+          // 保存到本地存储
+          localStorage.setItem('perlerMyBeads', JSON.stringify(myBeads));
+          renderMyBeads();
+          showNotification('已从我的拼豆库中移除', 'check-circle', 'green-500');
+        });
+      });
+      
+      // 减少按钮
+      document.querySelectorAll('.my-bead-item .decrease-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const code = this.dataset.code;
+          if (inventory[code] >= 10) {
+            inventory[code] -= 10;
+          } else if (inventory[code] > 0) {
+            inventory[code] = 0;
+          }
+          updateInventoryInput(code);
+          // 同时更新主库存列表
+          const inventoryItem = document.querySelector(`.inventory-item[data-code="${code}"]`);
+          if (inventoryItem) {
+            const inventoryInput = inventoryItem.querySelector('.inventory-input');
+            if (inventoryInput) {
+              inventoryInput.value = inventory[code];
+            }
+            const inventoryQuantity = inventoryItem.querySelector('.inventory-quantity');
+            if (inventoryQuantity) {
+              inventoryQuantity.className = `inventory-quantity font-medium text-sm font-black ${inventory[code] < 100 ? 'text-red-500' : inventory[code] < 500 ? 'text-yellow-500' : 'text-green-500'}`;
+              inventoryQuantity.textContent = `库存: ${inventory[code]}`;
+            }
+          }
+        });
+      });
+      
+      // 增加按钮
+      document.querySelectorAll('.my-bead-item .increase-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const code = this.dataset.code;
+          inventory[code] += 10;
+          updateInventoryInput(code);
+          // 同时更新主库存列表
+          const inventoryItem = document.querySelector(`.inventory-item[data-code="${code}"]`);
+          if (inventoryItem) {
+            const inventoryInput = inventoryItem.querySelector('.inventory-input');
+            if (inventoryInput) {
+              inventoryInput.value = inventory[code];
+            }
+            const inventoryQuantity = inventoryItem.querySelector('.inventory-quantity');
+            if (inventoryQuantity) {
+              inventoryQuantity.className = `inventory-quantity font-medium text-sm font-black ${inventory[code] < 100 ? 'text-red-500' : inventory[code] < 500 ? 'text-yellow-500' : 'text-green-500'}`;
+              inventoryQuantity.textContent = `库存: ${inventory[code]}`;
+            }
+          }
+        });
+      });
+      
+      // 输入框
+      document.querySelectorAll('.my-bead-item .inventory-input').forEach(input => {
+        input.addEventListener('change', function() {
+          const code = this.dataset.code;
+          const value = parseInt(this.value) || 0;
+          inventory[code] = Math.max(0, value);
+          updateInventoryInput(code);
+          // 同时更新主库存列表
+          const inventoryItem = document.querySelector(`.inventory-item[data-code="${code}"]`);
+          if (inventoryItem) {
+            const inventoryInput = inventoryItem.querySelector('.inventory-input');
+            if (inventoryInput) {
+              inventoryInput.value = inventory[code];
+            }
+            const inventoryQuantity = inventoryItem.querySelector('.inventory-quantity');
+            if (inventoryQuantity) {
+              inventoryQuantity.className = `inventory-quantity font-medium text-sm font-black ${inventory[code] < 100 ? 'text-red-500' : inventory[code] < 500 ? 'text-yellow-500' : 'text-green-500'}`;
+              inventoryQuantity.textContent = `库存: ${inventory[code]}`;
+            }
+          }
+        });
+      });
+    }
+
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 标签切换
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const tab = this.dataset.tab;
+          
+          // 更新标签按钮状态
+          tabBtns.forEach(b => {
+            b.classList.remove('bg-primary', 'text-pixel-bg');
+            b.classList.add('bg-pixel-panel', 'text-pixel-border');
+          });
+          this.classList.add('bg-primary', 'text-pixel-bg');
+          this.classList.remove('bg-pixel-panel', 'text-pixel-border');
+          
+          // 显示对应内容
+          tabContents.forEach(content => {
+            content.classList.add('hidden');
+          });
+          document.getElementById(tab).classList.remove('hidden');
+        });
+      });
+
+      // 上传/画图标签切换
+      uploadTab.addEventListener('click', function() {
+        uploadTab.classList.add('bg-primary', 'text-pixel-bg');
+        uploadTab.classList.remove('bg-pixel-panel', 'text-pixel-border');
+        drawTab.classList.add('bg-pixel-panel', 'text-pixel-border');
+        drawTab.classList.remove('bg-primary', 'text-pixel-bg');
+        uploadSection.classList.remove('hidden');
+        drawSection.classList.add('hidden');
+        currentImage = null; // 清除当前图片
+      });
+      
+      drawTab.addEventListener('click', function() {
+        drawTab.classList.add('bg-primary', 'text-pixel-bg');
+        drawTab.classList.remove('bg-pixel-panel', 'text-pixel-border');
+        uploadTab.classList.add('bg-pixel-panel', 'text-pixel-border');
+        uploadTab.classList.remove('bg-primary', 'text-pixel-bg');
+        uploadSection.classList.add('hidden');
+        drawSection.classList.remove('hidden');
+        currentImage = null; // 清除当前图片
+      });
+
+      // 图片上传
+      imageUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            currentImage = e.target.result;
+            imagePreview.innerHTML = `<img src="${currentImage}" class="max-w-full max-h-[200px] object-contain">`;
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+
+      // 网格大小实时更新
+      const gridSizeValue = document.getElementById('grid-size-value');
+      gridSize.addEventListener('input', function() {
+        const size = this.value;
+        gridSizeValue.textContent = `${size}x${size}`;
+      });
+
+      // 画图画布大小调整
+      drawCanvasSize.addEventListener('input', function() {
+        canvasSize = parseInt(this.value);
+        drawCanvasSizeValue.textContent = `${canvasSize}x${canvasSize}`;
+        createDrawingCanvas();
+      });
+      
+      // 画笔大小调整
+      brushSizeInput.addEventListener('input', function() {
+        brushSize = parseInt(this.value);
+        brushSizeValue.textContent = `${brushSize}x${brushSize}`;
+      });
+      
+      // 工具切换
+      drawBrush.addEventListener('click', function() {
+        currentTool = 'brush';
+        drawBrush.classList.add('bg-primary', 'text-pixel-bg');
+        drawBrush.classList.remove('bg-pixel-panel', 'text-pixel-border');
+        drawEraser.classList.add('bg-pixel-panel', 'text-pixel-border');
+        drawEraser.classList.remove('bg-primary', 'text-pixel-bg');
+      });
+      
+      drawEraser.addEventListener('click', function() {
+        currentTool = 'eraser';
+        drawEraser.classList.add('bg-primary', 'text-pixel-bg');
+        drawEraser.classList.remove('bg-pixel-panel', 'text-pixel-border');
+        drawBrush.classList.add('bg-pixel-panel', 'text-pixel-border');
+        drawBrush.classList.remove('bg-primary', 'text-pixel-bg');
+      });
+      
+      // 撤销功能
+      drawUndo.addEventListener('click', function() {
+        if (history.length > 1) {
+          history.pop(); // 移除当前状态
+          const lastState = history[history.length - 1];
+          const img = new Image();
+          img.onload = function() {
+            drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingContext.drawImage(img, 0, 0);
+          };
+          img.src = lastState;
+        }
+      });
+      
+      // 清空画布
+      drawClear.addEventListener('click', function() {
+        drawGrid();
+        saveHistory();
+      });
+
+      // 生成拼豆图纸
+      generateBeadPattern.addEventListener('click', function() {
+        // 检查是上传图片还是画图
+        if (uploadSection.classList.contains('hidden')) {
+          // 从画图生成
+          currentPattern = generatePatternFromDrawing();
+          renderBeadPattern(currentPattern);
+          calculateUsedBeads(currentPattern);
+          showNotification('拼豆图纸生成成功', 'check-circle', 'green-500');
+        } else if (currentImage) {
+          // 从上传图片生成
+          const size = parseInt(gridSize.value);
+          generatePattern(currentImage, size);
+        } else {
+          showNotification('请先上传图片或在画图模式下绘制图案', 'exclamation-circle', 'red-500');
+          return;
+        }
+      });
+
+      // 扣除库存
+      deductInventory.addEventListener('click', function() {
+        if (!usedBeads || Object.keys(usedBeads).length === 0) {
+          showNotification('请先生成拼豆图纸', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        Object.keys(usedBeads).forEach(code => {
+          if (inventory[code] >= usedBeads[code]) {
+            inventory[code] -= usedBeads[code];
+          } else {
+            showNotification(`色号 ${code} 库存不足`, 'exclamation-circle', 'red-500');
+          }
+        });
+        
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+        renderInventory();
+        renderMyBeads(); // 更新我的拼豆库中的库存显示
+        showNotification('库存扣除成功', 'check-circle', 'green-500');
+      });
+
+      // 导出图纸
+      exportPattern.addEventListener('click', function() {
+        if (!currentPattern) {
+          showNotification('请先生成拼豆图纸', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // 创建canvas用于绘制拼豆图纸
+        const height = currentPattern.length;
+        const width = currentPattern[0] ? currentPattern[0].length : 0;
+        const beadSize = 60; // 每个拼豆60px，提高分辨率
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = width * beadSize;
+        canvas.height = height * beadSize;
+        
+        // 绘制拼豆图纸
+        currentPattern.forEach((row, y) => {
+          row.forEach((bead, x) => {
+            // 绘制背景色
+            ctx.fillStyle = bead.color;
+            ctx.fillRect(x * beadSize, y * beadSize, beadSize, beadSize);
+            // 添加网格线
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x * beadSize, y * beadSize, beadSize, beadSize);
+            // 添加色号文本（黑色描边）
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.font = '20px SimHei, Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeText(bead.code, x * beadSize + beadSize/2, y * beadSize + beadSize/2);
+            // 添加白色填充
+            ctx.fillStyle = '#fff';
+            ctx.fillText(bead.code, x * beadSize + beadSize/2, y * beadSize + beadSize/2);
+          });
+        });
+        
+        // 尝试使用blob方式下载
+        canvas.toBlob(function(blob) {
+          if (!blob) {
+            showNotification('生成图纸失败，请重试', 'exclamation-circle', 'red-500');
+            return;
+          }
+          
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'bead-pattern.jpg';
+          
+          // 检测设备类型
+          const isMobile = navigator.userAgent.match(/Android|iPhone|iPad|iPod/i);
+          
+          try {
+            if (isMobile) {
+              // 移动设备处理方式 - 使用更可靠的触发方式
+              link.style.display = 'none';
+              document.body.appendChild(link);
+              
+              // 使用dispatchEvent触发点击，更兼容第三方浏览器
+              const event = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+              });
+              link.dispatchEvent(event);
+              
+              setTimeout(function() {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }, 100);
+              showNotification('图纸已下载，请在相册中查看', 'check-circle', 'green-500');
+            } else {
+              // 桌面设备正常下载
+              link.click();
+              URL.revokeObjectURL(url);
+              showNotification('图纸导出成功', 'check-circle', 'green-500');
+            }
+          } catch (error) {
+            // 下载失败时的备选方案
+            console.error('下载失败:', error);
+            
+            // 尝试使用DataURL作为备选
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            link.href = dataUrl;
+            
+            try {
+              link.click();
+              showNotification('图纸已下载，请在相册中查看', 'check-circle', 'green-500');
+            } catch (dataUrlError) {
+              // 最终备选：打开新窗口显示图片
+              window.open(dataUrl, '_blank');
+              showNotification('图纸已打开，请手动保存', 'info-circle', 'blue-500');
+            }
+          }
+        }, 'image/jpeg', 0.9);
+      });
+      
+      // 清空预览
+      document.getElementById('clear-preview').addEventListener('click', function() {
+        currentPattern = null;
+        usedBeads = {};
+        beadPatternPreview.innerHTML = '<p class="text-pixel-border text-center py-10 text-sm">生成图纸后将显示预览</p>';
+        usedBeadsContainer.innerHTML = '<p class="text-pixel-border p-4 text-sm">生成图纸后将显示使用的色号</p>';
+        showNotification('预览已清空', 'check-circle', 'green-500');
+      });
+
+      // 库存搜索
+      inventorySearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const inventoryItems = document.querySelectorAll('.inventory-item');
+        
+        inventoryItems.forEach(item => {
+          const code = item.dataset.code.toLowerCase();
+          if (code.includes(searchTerm)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+
+      // 重置库存
+      resetInventory.addEventListener('click', function() {
+        // 重置为默认库存1000颗
+        beadColors.forEach(bead => {
+          inventory[bead.code] = 1000;
+        });
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+        renderInventory();
+        renderMyBeads(); // 更新我的拼豆库中的库存显示
+        showNotification('库存已重置', 'check-circle', 'green-500');
+      });
+
+      // 帮助模态框
+      helpButton.addEventListener('click', function() {
+        helpModal.classList.remove('hidden');
+      });
+      
+      closeHelp.addEventListener('click', function() {
+        helpModal.classList.add('hidden');
+      });
+      
+      closeHelpBtn.addEventListener('click', function() {
+        helpModal.classList.add('hidden');
+      });
+      
+      // 关闭全屏预览
+      document.getElementById('close-fullscreen').addEventListener('click', function() {
+        document.getElementById('fullscreen-preview').classList.add('hidden');
+      });
+      
+      // 点击模态框背景关闭
+      document.getElementById('fullscreen-preview').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.add('hidden');
+        }
+      });
+      
+      // 库存管理页面 - 图片上传
+      inventoryImageUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const imageUrl = e.target.result;
+            inventoryImagePreview.innerHTML = `<img src="${imageUrl}" class="max-w-full max-h-[200px] object-contain">`;
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+      
+      // 库存管理页面 - 分析图纸
+      analyzeImage.addEventListener('click', function() {
+        const imageElement = inventoryImagePreview.querySelector('img');
+        if (!imageElement) {
+          showNotification('请先上传图纸', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // 分析图片，识别色号
+        analyzeImageForBeads(imageElement.src);
+      });
+      
+      // 库存管理页面 - 清空分析
+      clearAnalysis.addEventListener('click', function() {
+        analyzedBeads = {};
+        analyzedBeadsContainer.innerHTML = '<p class="text-pixel-border p-4 pixel-text text-sm">分析图纸后将显示识别的色号</p>';
+        showNotification('分析已清空', 'check-circle', 'green-500');
+      });
+      
+      // 库存管理页面 - 扣除库存
+      deductInventoryFromImage.addEventListener('click', function() {
+        if (Object.keys(analyzedBeads).length === 0) {
+          showNotification('请先生成拼豆图纸', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        Object.keys(analyzedBeads).forEach(code => {
+          if (inventory[code] >= analyzedBeads[code]) {
+            inventory[code] -= analyzedBeads[code];
+          } else {
+            showNotification(`色号 ${code} 库存不足`, 'exclamation-circle', 'red-500');
+          }
+        });
+        
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+        renderInventory();
+        showNotification('库存扣除成功', 'check-circle', 'green-500');
+      });
+      
+      // 库存管理页面 - 增加库存
+      addInventoryFromImage.addEventListener('click', function() {
+        if (Object.keys(analyzedBeads).length === 0) {
+          showNotification('请先生成拼豆图纸', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        Object.keys(analyzedBeads).forEach(code => {
+          inventory[code] += analyzedBeads[code];
+        });
+        
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+        renderInventory();
+        renderMyBeads(); // 更新我的拼豆库中的库存显示
+        showNotification('库存增加成功', 'check-circle', 'green-500');
+      });
+      
+      // 我的拼豆库 - 搜索功能
+      myBeadsSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const myBeadItems = document.querySelectorAll('.my-bead-item');
+        
+        myBeadItems.forEach(item => {
+          const code = item.dataset.code.toLowerCase();
+          if (code.includes(searchTerm)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+      
+      // 我的拼豆库 - 添加功能
+      addToMyBeads.addEventListener('click', function() {
+        const searchTerm = myBeadsSearch.value.trim().toUpperCase();
+        if (!searchTerm) {
+          showNotification('请输入色号', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // 检查色号是否存在
+        const bead = beadColors.find(b => b.code === searchTerm);
+        if (!bead) {
+          showNotification('色号不存在', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // 检查是否已经在我的拼豆库中
+        if (myBeads.includes(searchTerm)) {
+          showNotification('该色号已在我的拼豆库中', 'exclamation-circle', 'red-500');
+          return;
+        }
+        
+        // 添加到我的拼豆库
+        myBeads.push(searchTerm);
+        // 保存到本地存储
+        localStorage.setItem('perlerMyBeads', JSON.stringify(myBeads));
+        renderMyBeads();
+        myBeadsSearch.value = ''; // 清空搜索框
+        showNotification('已添加到我的拼豆库', 'check-circle', 'green-500');
+      });
+    }
+
+    // 生成拼豆图纸
+    function generatePattern(image, size) {
+      const img = new Image();
+      img.onload = function() {
+        // 保持原始图像的宽高比
+        const aspectRatio = img.width / img.height;
+        let canvasWidth, canvasHeight;
+        
+        if (aspectRatio >= 1) {
+          // 横向图片
+          canvasWidth = size;
+          canvasHeight = Math.round(size / aspectRatio);
+        } else {
+          // 纵向图片
+          canvasWidth = Math.round(size * aspectRatio);
+          canvasHeight = size;
+        }
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        // 绘制并缩放图片，保持原始比例
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        
+        // 获取像素数据
+        const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+        const data = imageData.data;
+        
+        // 生成拼豆图案
+        const pattern = [];
+        usedBeads = {};
+        
+        for (let y = 0; y < canvasHeight; y++) {
+          const row = [];
+          for (let x = 0; x < canvasWidth; x++) {
+            const index = (y * canvasWidth + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            
+            // 找到最接近的拼豆颜色
+            const closestBead = findClosestBead(r, g, b);
+            row.push(closestBead);
+            
+            // 统计使用的拼豆
+            if (!usedBeads[closestBead.code]) {
+              usedBeads[closestBead.code] = 0;
+            }
+            usedBeads[closestBead.code]++;
+          }
+          pattern.push(row);
+        }
+        
+        currentPattern = pattern;
+        renderBeadPattern(pattern);
+        renderUsedBeads(usedBeads);
+        showNotification('拼豆图纸生成成功', 'check-circle', 'green-500');
+      };
+      img.src = image;
+    }
+
+    // 找到最接近的拼豆颜色
+    function findClosestBead(r, g, b) {
+      let closestBead = beadColors[0];
+      let closestDistance = Infinity;
+      
+      beadColors.forEach(bead => {
+        const beadColor = hexToRgb(bead.color);
+        const distance = Math.sqrt(
+          Math.pow(r - beadColor.r, 2) +
+          Math.pow(g - beadColor.g, 2) +
+          Math.pow(b - beadColor.b, 2)
+        );
+        
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestBead = bead;
+        }
+      });
+      
+      return closestBead;
+    }
+
+    // 十六进制颜色转RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 255, g: 255, b: 255 };
+    }
+
+    // 渲染拼豆图纸
+    function renderBeadPattern(pattern) {
+      const height = pattern.length;
+      const width = pattern[0] ? pattern[0].length : 0;
+      const container = document.createElement('div');
+      container.className = 'relative';
+      let scale = 1;
+      const minScale = 0.5;
+      const maxScale = 3;
+      
+      // 创建带网格线和色号的图纸
+      const grid = document.createElement('div');
+      grid.className = 'bead-grid cursor-pointer';
+      grid.style.gridTemplateColumns = `repeat(${width}, 30px)`;
+      grid.style.width = `${width * 30}px`;
+      grid.style.height = `${height * 30}px`;
+      grid.style.margin = '0 auto';
+      grid.style.border = '2px solid #333';
+      grid.style.position = 'relative';
+      grid.style.transition = 'transform 0.2s ease';
+      grid.style.transformOrigin = 'center center';
+      
+      // 添加点击事件，触发全屏预览
+      grid.addEventListener('click', function() {
+        showFullScreenPreview(pattern);
+      });
+      
+      pattern.forEach((row, y) => {
+        row.forEach((bead, x) => {
+          const cell = document.createElement('div');
+          cell.className = 'bead-cell';
+          cell.style.backgroundColor = bead.color;
+          cell.style.width = '30px';
+          cell.style.height = '30px';
+          cell.style.border = '1px solid rgba(0, 0, 0, 0.3)';
+          cell.style.display = 'flex';
+          cell.style.alignItems = 'center';
+          cell.style.justifyContent = 'center';
+          cell.style.fontSize = '10px';
+          cell.style.fontWeight = 'bold';
+          cell.style.color = '#fff';
+          cell.style.fontFamily = 'SimHei, sans-serif';
+          cell.style.textShadow = '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
+          cell.textContent = bead.code;
+          grid.appendChild(cell);
+        });
+      });
+      
+      container.appendChild(grid);
+      beadPatternPreview.innerHTML = '';
+      beadPatternPreview.appendChild(container);
+      
+      // 预览区域缩放功能
+      document.getElementById('preview-zoom-in').addEventListener('click', function() {
+        if (scale < maxScale) {
+          scale += 0.1;
+          grid.style.transform = `scale(${scale})`;
+        }
+      });
+      
+      document.getElementById('preview-zoom-out').addEventListener('click', function() {
+        if (scale > minScale) {
+          scale -= 0.1;
+          grid.style.transform = `scale(${scale})`;
+        }
+      });
+    }
+
+    // 显示全屏预览
+    function showFullScreenPreview(pattern) {
+      const height = pattern.length;
+      const width = pattern[0] ? pattern[0].length : 0;
+      const fullscreenContent = document.getElementById('fullscreen-content');
+      let scale = 1;
+      const minScale = 0.5;
+      const maxScale = 3;
+      
+      // 计算屏幕可用空间
+      const availableWidth = window.innerWidth * 0.9;
+      const availableHeight = window.innerHeight * 0.9;
+      
+      // 计算合适的单元格大小，确保图纸能完整显示
+      const cellSize = Math.min(
+        Math.floor(availableWidth / width),
+        Math.floor(availableHeight / height),
+        40 // 最大单元格大小
+      );
+      
+      // 创建放大的图纸
+      const grid = document.createElement('div');
+      grid.className = 'bead-grid';
+      grid.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
+      grid.style.width = `${width * cellSize}px`;
+      grid.style.height = `${height * cellSize}px`;
+      grid.style.margin = '0 auto';
+      grid.style.border = '4px solid #333';
+      grid.style.transition = 'transform 0.2s ease';
+      grid.style.transformOrigin = 'center center';
+      
+      pattern.forEach((row, y) => {
+        row.forEach((bead, x) => {
+          const cell = document.createElement('div');
+          cell.className = 'bead-cell';
+          cell.style.backgroundColor = bead.color;
+          cell.style.width = `${cellSize}px`;
+          cell.style.height = `${cellSize}px`;
+          cell.style.border = '1px solid rgba(0, 0, 0, 0.3)';
+          grid.appendChild(cell);
+        });
+      });
+      
+      fullscreenContent.innerHTML = '';
+      fullscreenContent.appendChild(grid);
+      
+      // 显示全屏预览模态框
+      document.getElementById('fullscreen-preview').classList.remove('hidden');
+      
+      // 缩放功能
+      document.getElementById('zoom-in').addEventListener('click', function() {
+        if (scale < maxScale) {
+          scale += 0.1;
+          grid.style.transform = `scale(${scale})`;
+        }
+      });
+      
+      document.getElementById('zoom-out').addEventListener('click', function() {
+        if (scale > minScale) {
+          scale -= 0.1;
+          grid.style.transform = `scale(${scale})`;
+        }
+      });
+    }
+
+    // 分析图片识别色号
+    function analyzeImageForBeads(imageUrl) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      // 设置画布大小
+      canvas.width = 100;
+      canvas.height = 100;
+      
+      const img = new Image();
+      img.onload = function() {
+        // 绘制并缩放图片
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 100, 100);
+        ctx.drawImage(img, 0, 0, 100, 100);
+        
+        // 获取像素数据
+        const imageData = ctx.getImageData(0, 0, 100, 100);
+        const data = imageData.data;
+        
+        // 分析颜色，识别色号
+        analyzedBeads = {};
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+          
+          // 跳过透明像素
+          if (a < 128) continue;
+          
+          // 找到最接近的拼豆颜色
+          const closestBead = findClosestBead(r, g, b);
+          
+          // 统计使用的拼豆
+          if (!analyzedBeads[closestBead.code]) {
+            analyzedBeads[closestBead.code] = 0;
+          }
+          analyzedBeads[closestBead.code]++;
+        }
+        
+        // 渲染分析结果
+        renderAnalyzedBeads(analyzedBeads);
+        showNotification('图纸分析成功', 'check-circle', 'green-500');
+      };
+      img.src = imageUrl;
+    }
+
+    // 渲染分析结果
+    function renderAnalyzedBeads(beads) {
+      const container = document.createElement('div');
+      container.className = 'space-y-2';
+      
+      Object.keys(beads).forEach(code => {
+        const bead = beadColors.find(b => b.code === code);
+        if (bead) {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between';
+          item.innerHTML = `
+            <div class="flex items-center">
+              <div class="bead-preview" style="background-color: ${bead.color}"></div>
+              <span class="font-medium">${bead.code}</span>
+              <span class="text-gray-600 ml-2">${bead.name}</span>
+            </div>
+            <span class="text-gray-600 font-medium">${beads[code]} 颗</span>
+          `;
+          container.appendChild(item);
+        }
+      });
+      
+      analyzedBeadsContainer.innerHTML = '';
+      analyzedBeadsContainer.appendChild(container);
+    }
+
+    // 渲染使用的拼豆
+    function renderUsedBeads(beads) {
+      const container = document.createElement('div');
+      container.className = 'space-y-2';
+      
+      Object.keys(beads).forEach(code => {
+        const bead = beadColors.find(b => b.code === code);
+        if (bead) {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between';
+          item.innerHTML = `
+            <div class="flex items-center">
+              <div class="bead-preview" style="background-color: ${bead.color}"></div>
+              <span class="font-medium">${bead.code}</span>
+              <span class="text-gray-600 ml-2">${bead.name}</span>
+            </div>
+            <span class="text-gray-600 font-medium">${beads[code]} 颗</span>
+          `;
+          container.appendChild(item);
+        }
+      });
+      
+      usedBeadsContainer.innerHTML = '';
+      usedBeadsContainer.appendChild(container);
+    }
+
+    // 渲染库存列表
+    function renderInventory() {
+      inventoryItems.innerHTML = '';
+      
+      beadColors.forEach(bead => {
+        const item = document.createElement('div');
+        item.className = 'inventory-item flex flex-col items-center py-3 px-4 border-4 border-pixel-border pixel-border hover:bg-pixel-panel';
+        item.dataset.code = bead.code;
+        
+        item.innerHTML = `
+          <div class="flex flex-col space-y-4 w-full">
+            <div class="w-full relative h-10 border-2 border-pixel-border rounded-lg">
+              <div class="absolute inset-0 flex">
+                <div class="w-1/2 flex items-center justify-center font-medium text-sm font-black" style="background-color: ${bead.color}; color: #fff; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
+                  ${bead.code}
+                </div>
+                <div class="w-1/2 flex items-center justify-center text-sm bg-pixel-bg">
+                  ${bead.name}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between w-full">
+              <span class="inventory-quantity font-medium text-sm font-black ${inventory[bead.code] < 100 ? 'text-red-500' : inventory[bead.code] < 500 ? 'text-yellow-500' : 'text-green-500'}">库存: ${inventory[bead.code]}</span>
+              <div class="flex items-center">
+                <button class="decrease-btn px-2 py-1 bg-pixel-panel border-2 border-pixel-border pixel-button rounded-lg" data-code="${bead.code}">
+                  <i class="fa fa-minus text-pixel-border"></i>
+                </button>
+                <input type="number" class="inventory-input w-24 text-center bg-pixel-bg border-2 border-t-0 border-b-0 border-pixel-border text-sm" value="${inventory[bead.code]}" data-code="${bead.code}">
+                <button class="increase-btn px-2 py-1 bg-pixel-panel border-2 border-pixel-border pixel-button rounded-lg" data-code="${bead.code}">
+                  <i class="fa fa-plus text-pixel-border"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        inventoryItems.appendChild(item);
+      });
+      
+      // 添加库存操作事件监听器
+      addInventoryEventListeners();
+    }
+
+    // 添加库存操作事件监听器
+    function addInventoryEventListeners() {
+      // 减少按钮 - 只为主库存列表添加
+      document.querySelectorAll('.inventory-item .decrease-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const code = this.dataset.code;
+          if (inventory[code] >= 10) {
+            inventory[code] -= 10;
+          } else if (inventory[code] > 0) {
+            inventory[code] = 0;
+          }
+          updateInventoryInput(code);
+          // 同时更新我的拼豆库
+          renderMyBeads();
+        });
+      });
+      
+      // 增加按钮 - 只为主库存列表添加
+      document.querySelectorAll('.inventory-item .increase-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const code = this.dataset.code;
+          inventory[code] += 10;
+          updateInventoryInput(code);
+          // 同时更新我的拼豆库
+          renderMyBeads();
+        });
+      });
+      
+      // 输入框 - 只为主库存列表添加
+      document.querySelectorAll('.inventory-item .inventory-input').forEach(input => {
+        input.addEventListener('change', function() {
+          const code = this.dataset.code;
+          const value = parseInt(this.value) || 0;
+          inventory[code] = Math.max(0, value);
+          updateInventoryInput(code);
+          // 同时更新我的拼豆库
+          renderMyBeads();
+        });
+      });
+    }
+
+    // 更新库存输入框
+    function updateInventoryInput(code) {
+      const input = document.querySelector(`.inventory-input[data-code="${code}"]`);
+      if (input) {
+        input.value = inventory[code];
+        
+        // 更新库存数量的颜色
+        const item = document.querySelector(`.inventory-item[data-code="${code}"]`);
+        const quantityElement = item.querySelector('.inventory-quantity');
+        quantityElement.className = `inventory-quantity font-medium text-sm font-black ${inventory[code] < 100 ? 'text-red-500' : inventory[code] < 500 ? 'text-yellow-500' : 'text-green-500'}`;
+        quantityElement.textContent = `库存: ${inventory[code]}`;
+        
+        // 同时更新我的拼豆库中的库存显示
+        const myBeadItem = document.querySelector(`.my-bead-item[data-code="${code}"]`);
+        if (myBeadItem) {
+          const myBeadQuantityElement = myBeadItem.querySelector('.inventory-quantity');
+          myBeadQuantityElement.className = `inventory-quantity font-medium text-sm font-black ${inventory[code] < 100 ? 'text-red-500' : inventory[code] < 500 ? 'text-yellow-500' : 'text-green-500'}`;
+          myBeadQuantityElement.textContent = `库存: ${inventory[code]}`;
+        }
+        
+        // 保存到本地存储
+        localStorage.setItem('perlerInventory', JSON.stringify(inventory));
+      }
+    }
+
+    // 显示通知
+    function showNotification(message, icon, color) {
+      notificationIcon.className = `fa fa-${icon} text-${color} mr-3 text-xl`;
+      notificationText.textContent = message;
+      notification.classList.remove('translate-y-20', 'opacity-0');
+      
+      setTimeout(() => {
+        notification.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
 </html>
