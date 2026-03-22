@@ -1,11 +1,593 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        Hello World
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT字幕文本替换工具</title>
+    <style>
+        /* 莫兰迪色系定义 */
+        :root {
+            --morandi-pink: #d4b8a0;
+            --morandi-blue: #a8b8d8;
+            --morandi-green: #b8c8a9;
+            --morandi-yellow: #d8c8a9;
+            --morandi-gray: #a8a8a8;
+            --morandi-dark: #5a5a5a;
+            --morandi-light: #f5f0e8;
+            --morandi-white: #faf9f7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--morandi-light);
+            color: var(--morandi-dark);
+            line-height: 1.6;
+        }
+        
+        /* 页眉样式 */
+        .header {
+            background-color: var(--morandi-white);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--morandi-pink);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--morandi-pink);
+        }
+        
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            background-color: var(--morandi-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .help-button {
+            background-color: var(--morandi-green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .help-button:hover {
+            background-color: var(--morandi-blue);
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--morandi-white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr 1fr;
+            gap: 20px;
+            align-items: stretch;
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .left-column .section:first-child {
+            flex: 0 0 auto;
+        }
+        
+        .left-column .section:last-child {
+            flex: 1;
+        }
+        
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .section {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+            height: 100%;
+        }
+        
+        .section-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-content textarea {
+            flex: 1;
+        }
+        
+        .button-container {
+            margin-top: auto;
+            display: flex;
+            gap: 10px;
+            padding-top: 15px;
+        }
+        
+        textarea {
+            flex: 1;
+            min-height: 200px;
+        }
+        
+        .button-container {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--morandi-dark);
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: var(--morandi-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--morandi-pink);
+            transition: all 0.3s ease;
+        }
+        
+        .section:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transform: translateY(-2px);
+        }
+        
+        h2 {
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--morandi-dark);
+            font-weight: 600;
+        }
+        
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid var(--morandi-gray);
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 1px solid var(--morandi-gray);
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            resize: vertical;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--morandi-pink);
+            box-shadow: 0 0 0 2px rgba(212, 184, 160, 0.2);
+        }
+        
+        button {
+            background-color: var(--morandi-blue);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: var(--morandi-pink);
+            transform: translateY(-2px);
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .success {
+            color: #27ae60;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        /* 帮助弹窗样式 */
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .help-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--morandi-white);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .help-content h3 {
+            color: var(--morandi-pink);
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .help-content ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .help-content li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .close-button {
+            background-color: var(--morandi-gray);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .close-button:hover {
+            background-color: var(--morandi-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- 页眉 -->
+    <div class="header">
+        <div class="header-left">
+            <div class="header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6L12 10L20 6V18L12 14L4 18V6Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="header-logo">恒创</div>
+        </div>
+        <div class="header-right">
+            <button class="help-button" onclick="openHelp()">帮助</button>
+        </div>
+    </div>
+    
+    <!-- 帮助弹窗 -->
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <h3>如何使用SRT字幕文本替换工具</h3>
+            <ol>
+                <li><strong>上传SRT文件</strong>：在左侧模块中点击文件选择按钮，选择您要修改的SRT字幕文件</li>
+                <li><strong>查看原始内容</strong>：上传后，原始SRT内容会显示在中间的"原始SRT内容"文本框中</li>
+                <li><strong>使用提示词（可选）</strong>：点击"输入新文本"旁边的"提示词"按钮，可生成提示词发送给AI软件获取翻译或改写内容</li>
+                <li><strong>输入新文本</strong>：在左侧模块的"输入新文本"文本框中，每行输入对应SRT中的一句新文本。工具会实时显示您输入的文本行数</li>
+                <li><strong>替换文本</strong>：点击"替换文本"按钮，系统会将您输入的新文本替换到SRT文件中</li>
+                <li><strong>查看修改内容</strong>：修改后的内容会显示在右侧的"修改后的内容"文本框中</li>
+                <li><strong>下载文件</strong>：点击右侧模块中的"下载修改后的SRT"按钮，保存修改后的SRT文件</li>
+            </ol>
+            <button class="close-button" onclick="closeHelp()">关闭</button>
+        </div>
+    </div>
+    
+    <!-- 提示词弹窗 -->
+    <div class="help-modal" id="promptModal">
+        <div class="help-content">
+            <h3>将此提示词发送给AI软件</h3>
+            <div style="margin-bottom: 20px;">
+                <textarea id="promptInput" style="width: 100%; height: 150px; margin-bottom: 10px; padding: 10px; border: 1px solid var(--morandi-gray); border-radius: 4px; font-family: 'Courier New', Courier, monospace;"></textarea>
+                <div style="display: flex; gap: 10px; justify-content: space-between;">
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="savePrompt()" style="flex: 1;">保存</button>
+                        <button onclick="loadPrompt()" style="flex: 1;">加载</button>
+                    </div>
+                    <button onclick="copyPrompt()" style="flex: 1;">复制</button>
+                </div>
+            </div>
+            <div id="promptMessage" style="margin-bottom: 10px; color: var(--morandi-dark);"></div>
+            <button class="close-button" onclick="closePromptModal()">关闭</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>SRT字幕文本替换工具</h1>
+        
+        <div class="layout-grid">
+            <!-- 左侧列 -->
+            <div class="left-column">
+                <div class="section">
+                    <h2>上传SRT文件</h2>
+                    <div class="section-content">
+                        <input type="file" id="srtFile" accept=".srt">
+                        <div id="fileError" class="error"></div>
+                        
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--morandi-gray);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="color: var(--morandi-dark); font-size: 14px;">输入新文本</h3>
+                                <button onclick="openPromptModal()" style="font-size: 12px; padding: 4px 12px;">提示词</button>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 5px;">
+                                <span id="lineCount">行数: 0</span>
+                            </div>
+                            <textarea id="newText" placeholder="请输入新文本，每行对应SRT中的一句"></textarea>
+                            <div class="button-container">
+                                <button onclick="replaceText()">替换文本</button>
+                            </div>
+                            <div id="operationResult" class="success"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 中间列 -->
+            <div class="center-column">
+                <div class="section">
+                    <h2>原始SRT内容</h2>
+                    <div class="section-content">
+                        <textarea id="originalContent" readonly placeholder="上传文件后显示原始内容"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧列 -->
+            <div class="right-column">
+                <div class="section">
+                    <h2>修改后的内容</h2>
+                    <div class="section-content">
+                        <textarea id="modifiedContent" readonly placeholder="替换后显示修改内容"></textarea>
+                        <div class="button-container">
+                            <button onclick="downloadSRT()">下载修改后的SRT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let srtContent = '';
+        let srtLines = [];
+        let modifiedContent = '';
+        
+        document.getElementById('srtFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.srt')) {
+                document.getElementById('fileError').textContent = '请上传SRT格式的文件';
+                return;
+            }
+            
+            document.getElementById('fileError').textContent = '';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                srtContent = e.target.result;
+                document.getElementById('originalContent').value = srtContent;
+                parseSRT(srtContent);
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+        
+        document.getElementById('newText').addEventListener('input', function(e) {
+            const text = this.value;
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            document.getElementById('lineCount').textContent = '行数: ' + lines.length;
+        });
+        
+        function openHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+        
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+        
+        // 点击弹窗外部关闭
+        window.onclick = function(event) {
+            const helpModal = document.getElementById('helpModal');
+            const promptModal = document.getElementById('promptModal');
+            if (event.target == helpModal) {
+                helpModal.style.display = 'none';
+            } else if (event.target == promptModal) {
+                promptModal.style.display = 'none';
+            }
+        }
+        
+        // 提示词弹窗功能
+        function openPromptModal() {
+            document.getElementById('promptModal').style.display = 'block';
+            // 加载保存的提示词
+            loadPrompt();
+        }
+        
+        function closePromptModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+        
+        function copyPrompt() {
+            const promptInput = document.getElementById('promptInput');
+            promptInput.select();
+            document.execCommand('copy');
+            document.getElementById('promptMessage').textContent = '提示词已复制到剪贴板！';
+            setTimeout(() => {
+                document.getElementById('promptMessage').textContent = '';
+            }, 2000);
+        }
+        
+        function savePrompt() {
+            const promptInput = document.getElementById('promptInput');
+            const promptText = promptInput.value;
+            localStorage.setItem('srtPrompt', promptText);
+            document.getElementById('promptMessage').textContent = '提示词已保存！';
+            setTimeout(() => {
+                document.getElementById('promptMessage').textContent = '';
+            }, 2000);
+        }
+        
+        function loadPrompt() {
+            const savedPrompt = localStorage.getItem('srtPrompt');
+            if (savedPrompt) {
+                document.getElementById('promptInput').value = savedPrompt;
+            } else {
+                // 默认为空
+                document.getElementById('promptInput').value = '';
+            }
+        }
+        
+        function parseSRT(content) {
+            const lines = content.split('\n');
+            srtLines = [];
+            let currentLine = {
+                index: '',
+                time: '',
+                text: ''
+            };
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) {
+                    if (currentLine.index) {
+                        srtLines.push({...currentLine});
+                        currentLine = {
+                            index: '',
+                            time: '',
+                            text: ''
+                        };
+                    }
+                } else if (!currentLine.index) {
+                    currentLine.index = line;
+                } else if (!currentLine.time) {
+                    currentLine.time = line;
+                } else {
+                    currentLine.text += (currentLine.text ? '\n' : '') + line;
+                }
+            }
+            
+            if (currentLine.index) {
+                srtLines.push(currentLine);
+            }
+        }
+        
+        function replaceText() {
+            if (srtLines.length === 0) {
+                document.getElementById('operationResult').textContent = '请先上传SRT文件';
+                return;
+            }
+            
+            const newText = document.getElementById('newText').value;
+            const newLines = newText.split('\n').filter(line => line.trim() !== '');
+            
+            if (newLines.length === 0) {
+                document.getElementById('operationResult').textContent = '请输入新文本';
+                return;
+            }
+            
+            let result = '';
+            for (let i = 0; i < srtLines.length; i++) {
+                const line = srtLines[i];
+                result += line.index + '\n';
+                result += line.time + '\n';
+                result += (newLines[i] || line.text) + '\n';
+                result += '\n';
+            }
+            
+            modifiedContent = result;
+            document.getElementById('modifiedContent').value = modifiedContent;
+            document.getElementById('operationResult').textContent = '文本替换成功！';
+        }
+        
+        function downloadSRT() {
+            if (!modifiedContent) {
+                document.getElementById('operationResult').textContent = '请先替换文本';
+                return;
+            }
+            
+            const blob = new Blob([modifiedContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'modified.srt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('operationResult').textContent = '文件下载成功！';
+        }
+    </script>
+</body>
 </html>
