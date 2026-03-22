@@ -308,6 +308,47 @@
         .close-button:hover {
             background-color: var(--morandi-dark);
         }
+        
+        /* 页脚样式 */
+        .footer {
+            background-color: var(--morandi-white);
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+            margin-top: 30px;
+            border-top: 2px solid var(--morandi-pink);
+            position: relative;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            color: var(--morandi-gray);
+            font-size: 14px;
+        }
+        
+        .footer-question {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            width: 30px;
+            height: 30px;
+            background-color: var(--morandi-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-question:hover {
+            background-color: var(--morandi-pink);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -359,6 +400,15 @@
             </div>
             <div id="promptMessage" style="margin-bottom: 10px; color: var(--morandi-dark);"></div>
             <button class="close-button" onclick="closePromptModal()">关闭</button>
+        </div>
+    </div>
+    
+    <!-- 作者弹窗 -->
+    <div class="help-modal" id="authorModal">
+        <div class="help-content">
+            <h3>关于作者</h3>
+            <p style="font-size: 18px; text-align: center; margin: 20px 0;">作者真是个天才！</p>
+            <button class="close-button" onclick="closeAuthorModal()">关闭</button>
         </div>
     </div>
     
@@ -417,6 +467,14 @@
         </div>
     </div>
     
+    <!-- 页脚 -->
+    <div class="footer">
+        <div class="footer-content">
+            © 2026 恒创 SRT字幕替换工具
+        </div>
+        <div class="footer-question" onclick="openAuthorModal()">?</div>
+    </div>
+    
     <script>
         let srtContent = '';
         let srtLines = [];
@@ -460,10 +518,13 @@
         window.onclick = function(event) {
             const helpModal = document.getElementById('helpModal');
             const promptModal = document.getElementById('promptModal');
+            const authorModal = document.getElementById('authorModal');
             if (event.target == helpModal) {
                 helpModal.style.display = 'none';
             } else if (event.target == promptModal) {
                 promptModal.style.display = 'none';
+            } else if (event.target == authorModal) {
+                authorModal.style.display = 'none';
             }
         }
         
@@ -476,6 +537,15 @@
         
         function closePromptModal() {
             document.getElementById('promptModal').style.display = 'none';
+        }
+        
+        // 作者弹窗功能
+        function openAuthorModal() {
+            document.getElementById('authorModal').style.display = 'block';
+        }
+        
+        function closeAuthorModal() {
+            document.getElementById('authorModal').style.display = 'none';
         }
         
         function copyPrompt() {
